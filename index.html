@@ -154,6 +154,16 @@ section { padding-block: clamp(40px, 7vw, 88px); scroll-margin-top: 56px; }
 .card .grow { flex: 1; display: flex; flex-direction: column; gap: 14px; }
 .board-note { margin-top: 20px; font-size: .875rem; color: var(--muted); }
 
+
+/* Recommendations */
+.quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 16px; align-items: start; }
+.quote { margin: 0; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.quote blockquote { margin: 0; display: grid; gap: 12px; }
+.quote blockquote p { font-size: .97rem; line-height: 1.6; color: var(--ink-2); }
+.quote figcaption { display: grid; gap: 2px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+.quote figcaption b { font-family: var(--font-display); font-weight: 650; font-size: 1.05rem; color: var(--ink); }
+.quote figcaption .mono { margin-top: 6px; }
+
 /* Skills */
 .skills { margin: 0; }
 .skills div { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 8px 40px; padding-block: 20px; border-top: 1px solid var(--line); }
@@ -194,6 +204,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <nav aria-label="Sections">
       <a href="#experience">Experience</a>
       <a href="#projects">AI projects</a>
+      <a href="#recommendations">Recommendations</a>
       <a href="#skills">Skills</a>
       <a href="#education">Education</a>
       <a href="#contact">Contact</a>
@@ -243,10 +254,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
           <h3>Independent Digital &amp; Business Initiatives</h3>
           <p class="org">Kolkata, India</p>
           <ul>
-            <li>Build product prototypes on AI-assisted development platforms, taking ideas through to working demos. See <a href="#projects">the projects below</a>.</li>
-            <li>Define requirements, features, workflows and business use cases for CRM-style and digital productivity products.</li>
-            <li>Evaluate what these platforms do well and where they fall short when turning complex requirements into software.</li>
-            <li>Run independent market and business analysis: product opportunities, supplier evaluation, sourcing, pricing, commercial planning and go-to-market.</li>
+            <li>Explored AI-assisted development platforms and how they apply to product development, rapid prototyping, workflow automation and business applications.</li>
+            <li>Worked on product concepts including a CRM-style business application and a digital productivity application, defining requirements, features, workflows and business use cases. See <a href="#projects">the projects below</a>.</li>
+            <li>Evaluated what these platforms do well and where they fall short when turning complex business and functional requirements into software.</li>
+            <li>Ran independent market and business analysis: product opportunities, supplier evaluation, sourcing, pricing, commercial planning and go-to-market.</li>
           </ul>
         </div>
       </article>
@@ -255,14 +266,17 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <div class="when mono">May 2020 – Jun 2025<span class="mono">5 yrs 2 mos</span></div>
         <div>
           <h3>Project &amp; Delivery Lead</h3>
-          <p class="org">TagFi / The Creators Marketplace (now Linka) · Remote, US / Kolkata</p>
+          <p class="org">Linka, formerly TagFi / The Creators Marketplace · Remote, US / Kolkata</p>
           <ul>
-            <li>Led end-to-end delivery and evolution of a SaaS, community and marketplace platform across Web, iOS, Android and Admin Panel.</li>
-            <li>Coordinated 27+ professionals in four distributed teams across Kolkata, Indore and Chandigarh, reporting to U.S.-based leadership.</li>
-            <li>Delivered 5,000+ JIRA tickets across 250+ small and large features, as the platform grew from event booking to business profiles, paid groups, video library, chat, memberships, subscriptions and marketplace capabilities.</li>
+            <li>Led end-to-end delivery as the platform evolved from TagFi / The Creators Marketplace into Linka, across Web, iOS, Android and Admin Panel.</li>
+            <li>Coordinated 27+ professionals across Product, Engineering, QA, Design and DevOps in four distributed teams across Kolkata, Indore and Chandigarh, reporting directly to U.S.-based leadership.</li>
+            <li>Led delivery as an event booking app grew into a community and marketplace ecosystem: business profiles, paid groups, video library, chat, memberships, subscriptions and marketplace workflows.</li>
+            <li>Delivered 5,000+ JIRA tickets across 250+ small and large features on Web, iOS, Android and Admin Panel.</li>
             <li>Coordinated the white-label marketplace platform, including subscription access, Stripe payments and batch payout workflows.</li>
             <li>Managed Agile delivery: backlog prioritization, sprint planning, requirements coordination, release planning, dependencies, stakeholder communication and delivery tracking.</li>
+            <li>Coordinated QA and pre-production validation across all four surfaces, including regression checks so new functionality did not break existing features.</li>
             <li>Supported about 20 customers, mostly U.S.-based, including Brooklyn Chamber of Commerce and California Hispanic Chamber of Commerce. The platform had attracted about US$4M in investment by the time I left.</li>
+            <li>Improved delivery visibility, accountability and stakeholder alignment through structured Agile processes, reporting and backlog management.</li>
           </ul>
           <div class="cadence">
             <div class="ticks" role="img" aria-label="One year of production releases, about 26, one every two weeks">
@@ -279,11 +293,13 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
           <h3>Project Manager</h3>
           <p class="org">Codelogicx Technologies Pvt. Ltd. · Kolkata, India</p>
           <ul>
-            <li>Progressed from Business Development Manager to Project Manager, taking responsibility for software delivery and stakeholder coordination.</li>
-            <li>Managed 3–4 concurrent projects across SaaS, enterprise applications, HRMS, financial systems and custom software.</li>
-            <li>Coordinated Product, Engineering, QA, UI/UX and Business teams on requirements, scope, timelines, priorities and releases.</li>
-            <li>Ran sprint planning, backlog management, project tracking, release planning, and risk, issue and dependency management.</li>
-            <li>Set up structured project reporting and delivery processes to improve visibility, accountability and execution.</li>
+            <li>Progressed from Business Development Manager to Project Manager on the strength of stakeholder management, software delivery and project execution.</li>
+            <li>Managed 3–4 concurrent projects across SaaS platforms, enterprise applications, HRMS solutions, financial systems and custom software.</li>
+            <li>Coordinated Product, Engineering, QA, UI/UX and Business teams on requirements, priorities, scope, timelines and delivery commitments.</li>
+            <li>Ran sprint planning, backlog management, release planning, project tracking and stakeholder communication.</li>
+            <li>Managed risks, issues, dependencies, timelines and delivery constraints across concurrent initiatives.</li>
+            <li>Set up delivery governance and reporting processes that improved project visibility, accountability and team collaboration.</li>
+            <li>Delivered multiple software projects in line with business requirements, timelines and quality standards.</li>
           </ul>
         </div>
       </article>
@@ -292,27 +308,74 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <div class="when mono">Dec 2013 – Mar 2016<span class="mono">2 yrs 4 mos</span></div>
         <div>
           <h3>Operations &amp; Commercial Coordination</h3>
-          <p class="org">Family business · India &amp; Nepal</p>
+          <p class="org">Micro Diesel (family business) · India &amp; Nepal</p>
           <ul>
-            <li>Managed procurement, tendering, commercial negotiations, vendor coordination and customer communication for industrial energy solution projects.</li>
-            <li>Coordinated vendors, engineers, site teams and customers across India and Nepal to support project execution.</li>
+            <li>Supported procurement, stakeholder coordination, commercial negotiations, site execution oversight and operations in an industrial and commercial energy solutions business.</li>
+            <li>Managed tender drafting, commercial coordination and stakeholder communication for the purchase and sale of industrial diesel generator systems.</li>
+            <li>Took part in site inspections, installation oversight and dismantling coordination at manufacturing facilities in India and Nepal.</li>
+            <li>Worked with senior stakeholders, vendors, engineers and operations teams to improve coordination and execution.</li>
           </ul>
         </div>
       </article>
 
       <article class="job">
-        <div class="when mono">Sep 2006 – Nov 2013<span class="mono">7 yrs 3 mos</span></div>
+        <div class="when mono">May 2013 – Nov 2013<span class="mono">7 mos</span></div>
         <div>
-          <h3>Business Development &amp; Project Coordination</h3>
-          <p class="org">Pixelsmedia Technologies · Citytech Software · Keyline IT Solutions · Ezy Tech Software Solutions</p>
+          <h3>Business Development Manager</h3>
+          <p class="org">Ezy Tech Software Solutions Pvt. Ltd. · Kolkata, India</p>
           <ul>
-            <li>Managed client relationships, requirements gathering, proposals, account coordination, project scope, timelines and stakeholder communication.</li>
-            <li>Supported software services business development, solution consulting, commercial discussions and project coordination.</li>
-            <li>Trained and onboarded new Marketing team members on processes, tools, workflows and daily responsibilities.</li>
-            <li>Represented Citytech Software at GITEX Dubai 2011 and contributed to international client engagements including Sony Japan and Publicitas Switzerland.</li>
+            <li>Managed client engagement, solution consulting, proposals, scope definition and commercial coordination across software and IT service engagements.</li>
+            <li>Handled customer interactions from requirement gathering through commercial discussions and project coordination.</li>
+            <li>Prepared scope documents, effort estimates, proposals and business requirement discussions.</li>
+            <li>Acted as liaison between clients and internal delivery teams to align expectations and execution priorities.</li>
+            <li>Supported contract discussions, documentation and relationship management.</li>
           </ul>
         </div>
       </article>
+
+      <article class="job">
+        <div class="when mono">Jul 2012 – Dec 2012<span class="mono">6 mos</span></div>
+        <div>
+          <h3>Business Development Manager</h3>
+          <p class="org">Keyline IT Solutions Pvt. Ltd. · Kolkata, India</p>
+          <ul>
+            <li>Managed client engagement, solution consulting, proposals, scope definition and commercial coordination across software and IT service engagements.</li>
+            <li>Handled customer interactions from requirement gathering through commercial discussions and project coordination.</li>
+            <li>Prepared scope documentation, effort estimates, proposals and business requirement discussions.</li>
+            <li>Trained and onboarded new Marketing team members on processes, tools, workflows and day-to-day responsibilities.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="job">
+        <div class="when mono">Apr 2010 – Jun 2012<span class="mono">2 yrs 3 mos</span></div>
+        <div>
+          <h3>Business Development Manager</h3>
+          <p class="org">Citytech Software | Microsoft Gold Partner · Greater Kolkata Area</p>
+          <ul>
+            <li>Managed client engagement from requirement gathering and solution discussions to proposals, scope definition, effort estimation and commercial coordination.</li>
+            <li>Bridged clients and internal delivery teams to align business expectations, scope, priorities and timelines.</li>
+            <li>Coordinated pre-sales and project planning: requirement clarification, workflow discussions, wireframe planning, documentation and stakeholder communication.</li>
+            <li>Supported software and mobile application initiatives by coordinating client expectations, delivery discussions and implementation planning.</li>
+            <li>Took part in global client-facing engagements and enterprise solution discussions, including international software projects for clients such as Sony Japan and Publicitas Switzerland.</li>
+            <li>Represented Citytech Software at GITEX Dubai 2011, with exposure to global technology partners and international business relationships.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="job">
+        <div class="when mono">Sep 2006 – Apr 2009<span class="mono">2 yrs 8 mos</span></div>
+        <div>
+          <h3>Web Marketing Executive</h3>
+          <p class="org">Pixelsmedia Technologies · Greater Kolkata Area</p>
+          <ul>
+            <li>Supported business growth through digital marketing, client engagement, online sales support and relationship management across domestic and international accounts.</li>
+            <li>Managed online bidding, customer communication, sales coordination and account interactions.</li>
+            <li>Supported business development while building client communication and stakeholder management skills.</li>
+          </ul>
+        </div>
+      </article>
+
     </div>
   </section>
 
@@ -424,6 +487,77 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         </article>
       </div>
       <p class="board-note" id="empty" hidden>No projects in this group yet.</p>
+    </div>
+  </section>
+
+    <section id="recommendations">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Recommendations</h2>
+        <span class="mono">9 from LinkedIn</span>
+        <p class="sec-intro">Written by colleagues I managed or worked alongside, shown as published on LinkedIn. A trailing "…" marks an excerpt. <a href="https://www.linkedin.com/in/vishal-kumar-jaiswal-11a11b11c/details/recommendations/" target="_blank" rel="noopener">Read them in full on LinkedIn ↗</a></p>
+      </div>
+      <div class="quotes">
+        <figure class="quote">
+          <blockquote>
+          <p>I had the pleasure of working with Vishal for over 4 years on several high-impact projects at Codelogicx and Tagfi, and I can say without hesitation that they are one of the most effective and reliable project managers I've worked with.</p>
+          <p>As a Senior Project Leader, Vishal consistently demonstrated strong leadership, strategic thinking, and an exceptional ability to keep cross-functional teams aligned and on schedule. …</p>
+          </blockquote>
+          <figcaption><b>Shahid Ali</b><span>Senior Software Engineer, Codelogicx Technologies</span><span class="mono">Worked with Vishal at different companies · June 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I've had the privilege of working with Vishal Kumar Jaiswal for the past six years, including on the Tagfi (now Linka) project. Throughout this time, Vishal has consistently demonstrated exceptional leadership, strategic thinking, and a calm, solution-oriented approach. He creates a collaborative, transparent work environment where team members feel supported and valued. His ability to manage complex projects and guide teams through evolving priorities is remarkable. Vishal's professionalism, dedication, and people-first mindset make him an outstanding project manager. I highly recommend him to any organization looking for a reliable, experienced, and inspiring leader</p>
+          </blockquote>
+          <figcaption><b>Manjarul Hoque</b><span>Full Stack Development</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I've had the pleasure of working under the leadership of Vishal da, and I can confidently say he is one of the best project managers I've worked with. Vishal da brings a rare combination of strategic thinking, clear communication, and empathetic leadership to the table.</p>
+          <p>He ensures that projects stay on track, encourages collaboration among team members, and always makes himself available for guidance. …</p>
+          </blockquote>
+          <figcaption><b>Jafar Ikbal Sekh</b><span>Senior Software Engineer, Codelogicx</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I had the pleasure of working with Vishal for 6–7 months, and during that time, I was consistently impressed by his clarity of vision, structured thinking, and ability to drive execution. As a PM, he strikes a great balance between user needs and business goals while fostering strong collaboration across teams. A dependable leader and a great team player—any team would be lucky to have him.</p>
+          </blockquote>
+          <figcaption><b>Subhankar Bag</b><span>Senior Android Developer, Team Lead</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I've had the privilege of working under Vishal's leadership, and it's been an incredibly rewarding experience. He is not only an exceptional manager but also a strong leader who consistently inspires and supports the team. He brings clarity, direction, and purpose to every project, ensuring tasks are well-structured and goals are aligned.</p>
+          <p>I'm grateful to have worked with him and would highly recommend Vishal to any organization seeking a reliable, inspiring, and results-driven leader.</p>
+          </blockquote>
+          <figcaption><b>Atul Kumar Singh</b><span>Senior Associate at PwC</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I had the privilege of working under Vishal's leadership, and it was truly one of the most rewarding experiences of my career. As a manager, Vishal leads with a strong sense of clarity, empathy, and purpose — qualities that inspire trust and confidence in those around him.</p>
+          <p>What stood out to me most was his ability to guide the team through challenges with calmness and strategic insight. …</p>
+          </blockquote>
+          <figcaption><b>Dnyaneshwar Raut</b><span>Cypress Automation | ISTQB certified</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>I've had the privilege of working closely with Vishal in a fast-paced technology environment, and I'm continually impressed by his strategic mindset and exceptional project execution skills. He possesses a deep understanding of software development lifecycles, agile methodologies, and cross-functional team coordination, making him a key driver in delivering complex projects on time and within scope.</p>
+          </blockquote>
+          <figcaption><b>Uday Nayak</b><span>Sr. Android Developer</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>Vishal has a real talent for thinking outside the box and coming up with creative solutions to problems. His ability to approach things from a different perspective has been invaluable to our team.</p>
+          <p>Vishal is an exceptional communicator with a knack for bringing people together and building strong relationships. His interpersonal skills have been key to our team's success.</p>
+          </blockquote>
+          <figcaption><b>Dhananjay Sonawane</b><span>Software Test Engineer</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>
+          <p>Vishal Kumar Jaiswal is a standout Project Manager — organized, proactive, and always on top of timelines and deliverables. He leads with calm confidence, keep teams aligned, and consistently drive projects to success. A reliable and results-driven leader — highly recommended!</p>
+          </blockquote>
+          <figcaption><b>Atanu Mondal</b><span>Senior Software Engineer (iOS), Codelogicx Technologies</span><span class="mono">Reported to Vishal directly · May 2025</span></figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
