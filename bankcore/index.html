@@ -1,0 +1,613 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>BankCore Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: persistent left rail of modules, one working pane. Role switcher in the top bar drives every permission check. */
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --ink:#0E1A2B; --muted:#5B6778; --line:#D8DEE6;
+  --accent:#0F5FA8; --accent-ink:#FFFFFF; --tint:#E6EEF7;
+  --good:#1B7F4B; --warn:#A66300; --bad:#B3261E; --gold:#8A6A0E;
+  --good-bg:#E3F3EA; --warn-bg:#FBEFD9; --bad-bg:#FBE5E3; --gold-bg:#F6EDCF;
+  --font:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C131C; --surface:#131C28; --ink:#E7EDF4; --muted:#94A3B5; --line:#243142;
+  --accent:#5AA2E6; --accent-ink:#07121F; --tint:#16263A;
+  --good:#4CC38A; --warn:#E0A24A; --bad:#F0827A; --gold:#D9B24C;
+  --good-bg:#123123; --warn-bg:#35270F; --bad-bg:#3A1A18; --gold-bg:#33290D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C131C; --surface:#131C28; --ink:#E7EDF4; --muted:#94A3B5; --line:#243142;
+  --accent:#5AA2E6; --accent-ink:#07121F; --tint:#16263A;
+  --good:#4CC38A; --warn:#E0A24A; --bad:#F0827A; --gold:#D9B24C;
+  --good-bg:#123123; --warn-bg:#35270F; --bad-bg:#3A1A18; --gold-bg:#33290D; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--font);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:18px} h3{font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:12px;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:17px;letter-spacing:.2px}
+.brand span{color:var(--muted);font-size:12px}
+.who{display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{background:none;border:0;padding:6px 11px;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:500}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.who label{color:var(--muted);font-size:12px}
+select,input,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
+select:focus-visible,input:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;padding-block:18px}
+nav{display:flex;flex-direction:column;gap:2px;position:sticky;top:64px;align-self:start}
+nav button{text-align:left;background:none;border:0;border-radius:6px;padding:8px 10px;cursor:pointer;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+nav button:hover{background:var(--tint);color:var(--ink)}
+nav button[aria-current="true"]{background:var(--tint);color:var(--accent);font-weight:600}
+nav .n{font-family:var(--mono);font-size:11px;background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:0 6px;align-self:center}
+main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:end}
+.head p{margin:2px 0 0;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi small{color:var(--muted);display:block}
+.kpi b{font-size:20px;font-variant-numeric:tabular-nums;font-weight:600}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.mono{font-family:var(--mono);font-size:12px}
+.num{text-align:right;white-space:nowrap}
+.pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:12px;background:var(--tint);color:var(--accent);white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)} .pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.gold{background:var(--gold-bg);color:var(--gold)} .pill.mute{background:var(--line);color:var(--muted)}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--line)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+form{display:grid;gap:10px}
+.f{display:grid;gap:3px}
+.f label{font-size:12px;color:var(--muted)}
+.two{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+.note{color:var(--muted);font-size:12px}
+.lock{background:var(--tint);border-radius:6px;padding:8px 10px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.list{display:grid;gap:10px}
+.item{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;min-width:0}
+.item.sel{border-color:var(--accent);background:var(--tint)}
+.split{display:grid;gap:16px;grid-template-columns:minmax(0,320px) minmax(0,1fr)}
+.pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ok{color:var(--good)} .badc{color:var(--bad)}
+.lnk{color:var(--accent);text-decoration:none;cursor:pointer}.lnk:hover{text-decoration:underline}
+.crumb{font-size:12px;color:var(--muted)}
+.cdet{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 320px;align-items:start}
+.col{display:grid;gap:16px;min-width:0}
+.kv{display:grid;grid-template-columns:104px minmax(0,1fr);gap:8px 10px;margin:10px 0 0}.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
+.tl{list-style:none;margin:12px 0 0;padding:0 0 0 12px;border-left:2px solid var(--line);display:grid;gap:14px}
+.tl li{position:relative;padding-left:14px}
+.tl li::before{content:"";position:absolute;left:-19px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tl li.payment::before{border-color:var(--good)}.tl li.grievance::before{border-color:var(--warn)}.tl li.compliance::before{border-color:var(--bad)}.tl li.other::before{border-color:var(--muted)}
+tr.clk{cursor:pointer}tr.clk:hover td,tr.on td{background:var(--tint)}
+.cr{color:var(--good)}
+.bal{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:980px){.cdet{grid-template-columns:minmax(0,1fr)}}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#toast.bad{background:var(--bad);color:#fff}
+@media (max-width:820px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:10px}
+  nav{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  nav button{white-space:nowrap}
+  .split{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){.btn{transition:filter .15s}.btn:hover{filter:brightness(1.08)}}
+</style>
+
+<div class="top">
+  <div class="brand"><b>BankCore</b><span>Core Banking and Lending prototype. Sample data, resets on reload.</span></div>
+  <div class="who"><div class="seg" id="theme" role="group" aria-label="Colour theme"><button type="button" data-theme-set="light" aria-pressed="false">Light</button><button type="button" data-theme-set="dark" aria-pressed="false">Dark</button><button type="button" data-theme-set="system" aria-pressed="true">System</button></div><label for="role">Signed in as</label><select id="role"></select></div>
+</div>
+<div class="layout">
+  <nav id="nav" aria-label="Modules"></nav>
+  <main id="main"></main>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr=n=>'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:Number.isInteger(+n)?0:2});
+const tmy=d=>new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Kolkata'});
+const tm=d=>new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Kolkata'});
+const dt=d=>new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
+function h53(str,seed=0){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(16).padStart(14,'0')}
+const rnd=n=>Array.from({length:n},()=>Math.floor(Math.random()*10)).join('');
+
+/* ---------- roles and permissions ---------- */
+const PERM_LABEL={'customers.view':'View customers','customers.edit':'Edit customers','accounts.manage':'Open and freeze accounts','pii.full':'See full PAN and phone','payments.view':'View payments','payments.create':'Initiate payments','payments.approve':'Approve payments (checker)','aml.review':'Clear AML holds','loans.view':'View loans','loans.create':'Create loan applications','loans.sanction':'Sanction loans','loans.disburse':'Disburse loans','vault.view':'View vaults','vault.cash':'Request cash movements','vault.custodian':'Vault custodian (dual control)','forex.view':'View forex','forex.deal':'Create remittances','grievance.view':'View grievances','grievance.create':'Register grievances','grievance.manage':'Assign, escalate, resolve grievances','audit.read':'Read audit trail'};
+const ROLES={
+  teller:{name:'Ravi Gupta',title:'Teller',perms:['customers.view','payments.view','payments.create','vault.view','vault.cash','grievance.view']},
+  cso:{name:'Priya Nandi',title:'Customer service officer',perms:['customers.view','customers.edit','accounts.manage','payments.view','payments.create','loans.view','grievance.view','grievance.create']},
+  loan:{name:'Sourav Ghosh',title:'Loan officer',perms:['customers.view','loans.view','loans.create']},
+  checker:{name:'Debjani Roy',title:'Operations officer (checker)',perms:['customers.view','payments.view','payments.approve','loans.view','loans.disburse','vault.view','vault.custodian','grievance.view']},
+  manager:{name:'Arup Banerjee',title:'Branch manager',perms:['customers.view','pii.full','accounts.manage','payments.view','payments.create','payments.approve','loans.view','loans.create','loans.sanction','loans.disburse','vault.view','vault.cash','vault.custodian','forex.view','grievance.view','grievance.create','grievance.manage','audit.read']},
+  forex:{name:'Imran Sheikh',title:'Forex dealer',perms:['customers.view','payments.view','forex.view','forex.deal']},
+  compliance:{name:'Kavita Rao',title:'Compliance and AML officer',perms:['customers.view','pii.full','accounts.manage','payments.view','loans.view','aml.review','grievance.view','audit.read']},
+  auditor:{name:'Neel Chatterjee',title:'Internal auditor (read only)',perms:['customers.view','payments.view','loans.view','vault.view','forex.view','grievance.view','audit.read']}
+};
+const NAV=[['dash','Dashboard',null],['cust','Customers','customers.view'],['acct','Accounts','customers.view'],['txn','Transactions','payments.view'],['pay','Payments','payments.view'],['loan','Loans','loans.view'],['vault','Vaults','vault.view'],['fx','Forex and SWIFT','forex.view'],['grv','Grievances','grievance.view'],['aud','Audit and chain','audit.read'],['roles','Staff and roles','customers.view'],['ins','Insurance','customers.view',1],['mf','Mutual funds','customers.view',1],['pen','Pension','customers.view',1]];
+
+/* ---------- state ---------- */
+const S={role:'manager',view:'dash',cust:'C1',seq:100,openSched:null,openMsg:null,
+ branches:[{n:'Park Street, Kolkata (main)',ifsc:'SMPL0000101',micr:'700123101',bic:'SMPLINBBXXX',svc:'Forex, gold, locker'},{n:'Salt Lake Sector V',ifsc:'SMPL0000102',micr:'700123102',bic:'SMPLINBB102',svc:'Forex, locker'},{n:'Howrah Maidan',ifsc:'SMPL0000103',micr:'711123103',bic:'n/a',svc:'Gold, locker'}],
+ customers:[
+  {id:'C1',name:'Anita Sen',type:'Individual',pan:'ABCPS1234K',phone:'+91 98300 11122',risk:'Low',kyc:'Verified',score:782,income:85000,emi:0},
+  {id:'C2',name:'Rahul Mukherjee',type:'Individual',pan:'BXQPM5521L',phone:'+91 98310 22233',risk:'Medium',kyc:'Verified',score:694,income:52000,emi:9000},
+  {id:'C3',name:'Sunrise Textiles Pvt Ltd',type:'Corporate',pan:'AAJCS8841Q',phone:'+91 33 4000 7788',risk:'Medium',kyc:'Verified',score:731,income:900000,emi:150000},
+  {id:'C4',name:'Meera Das',type:'Individual',pan:'CKLPD3390M',phone:'+91 98320 33344',risk:'Low',kyc:'Refresh due',score:640,income:38000,emi:0}],
+ accounts:[{no:'10010001',cust:'C1',type:'Savings',bal:245000.5},{no:'10010003',cust:'C2',type:'Savings',bal:68250},{no:'10010004',cust:'C3',type:'Current',bal:1850000},{no:'10010005',cust:'C4',type:'Savings',bal:15400}],
+ payments:[],loans:[],swift:[],lrs:{},
+ vault:{cash:{500:1200,200:800,100:1500,50:900,20:600,10:500},gold:[{no:'GP-1001',loan:'GL-0007',cust:'C1',grams:42.5,karat:22,slot:'A-01',status:'In vault'},{no:'GP-1002',loan:'GL-0009',cust:'C2',grams:31,karat:22,slot:'A-02',status:'In vault'}],moves:[]},
+ grv:[{id:'G1',cust:'C2',cat:'Failed transaction',text:'UPI payment debited but beneficiary not credited.',opened:Date.now()-30*3600e3,sla:24,level:1,owner:'Unassigned',status:'Open'},{id:'G2',cust:'C4',cat:'Charges dispute',text:'SMS charges applied twice last quarter.',opened:Date.now()-5*3600e3,sla:72,level:1,owner:'Priya Nandi',status:'Open'}],
+ audit:[],anchors:[],tampered:null,txns:[],hist:[],custOpen:null,acctOpen:null,txSel:null,txType:'all',txRail:'all',txAcct:'all',txQ:'',cuQ:'',evFilter:'all'};
+const RATES={USD:[84.6,85.4],EUR:[91.2,92.4],GBP:[107.1,108.6],AED:[23.0,23.4],SGD:[62.8,63.6]};
+const PRODUCTS={personal:{label:'Personal loan',rate:12.5,max:2500000,minT:6,maxT:60},corporate:{label:'Corporate term loan',rate:11,max:50000000,minT:12,maxT:120},gold:{label:'Gold loan',rate:9.5,max:5000000,minT:3,maxT:12,dt:12,da:150000},home:{label:'Home loan',rate:8.75,max:50000000,minT:60,maxT:360,dt:240,da:4500000},od:{label:'Overdraft limit',rate:11.5,max:5000000,minT:12,maxT:12,dt:12,da:1000000}};
+PRODUCTS.personal.dt=24;PRODUCTS.personal.da=400000;PRODUCTS.corporate.dt=60;PRODUCTS.corporate.da=2500000;
+const LOAN_OPEN=['Credit review','Valuation','Legal','Sanctioned'];
+
+const can=p=>ROLES[S.role].perms.includes(p);
+const me=()=>ROLES[S.role];
+const actor=()=>me().name+' ('+me().title+')';
+const cust=id=>S.customers.find(c=>c.id===id)||{name:'Unknown'};
+const accOf=id=>S.accounts.find(a=>a.cust===id);
+const nextId=()=>++S.seq;
+
+/* ---------- audit trail with hash chain and anchors ---------- */
+function entryHash(prev,e){return h53(prev+'|'+e.n+'|'+e.actor+'|'+e.action+'|'+e.entity+'|'+e.detail)}
+function log(action,entity,detail,c){
+  const prev=S.audit.length?S.audit[S.audit.length-1].hash:'genesis';
+  const e={n:S.audit.length+1,ts:Date.now(),actor:S.audit.length?actor():'System',action,entity,detail,cust:c||null,prev};
+  e.hash=entryHash(prev,e);S.audit.push(e);
+  if(e.n%5===0){const slice=S.audit.slice(e.n-5,e.n);S.anchors.push({id:S.anchors.length+1,from:e.n-4,to:e.n,root:h53(slice.map(x=>x.hash).join('')),at:Date.now()})}
+}
+function verify(){
+  let prev='genesis';
+  for(const e of S.audit){if(entryHash(prev,e)!==e.hash)return{ok:false,at:e.n};prev=e.hash}
+  for(const a of S.anchors){const slice=S.audit.slice(a.from-1,a.to);if(h53(slice.map(x=>x.hash).join(''))!==a.root)return{ok:false,at:a.from,anchor:a.id}}
+  return{ok:true};
+}
+log('boot','system','Prototype session started');
+
+function post(a,dir,amt,desc,ref,rail){const t={id:'T'+(S.txns.length+1000),ts:Date.now(),acct:a.no,cust:a.cust,dir,amount:amt,desc,ref:ref||'',rail:rail||'Internal',bal:a.bal};S.txns.push(t);return t}
+const clink=id=>`<a href="#" class="lnk" data-open-cust="${id}">${esc(cust(id).name)}</a>`;
+const alink=no=>`<a href="#" class="lnk" data-open-acct="${no}">${no}</a>`;
+/* ---------- helpers ---------- */
+const pill=(t,k='')=>`<span class="pill ${k}">${esc(t)}</span>`;
+const stKind=s=>({Completed:'good',Active:'good',Sent:'good','In vault':'good',Signed:'good',Resolved:'good',Verified:'good',Low:'good',Sanctioned:'',Medium:'warn','Pending approval':'warn','Credit review':'warn',Valuation:'warn',Legal:'warn','Queued NEFT':'warn',Pending:'warn','Pending release':'warn',Open:'warn','Refresh due':'warn',Frozen:'bad','AML hold':'bad',Rejected:'bad',Declined:'bad',High:'bad',Released:'mute'}[s]||'');
+const tbl=(h,rows)=>`<div class="scroll"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${h.length}" class="note">Nothing here yet.</td></tr>`}</tbody></table></div>`;
+function toast(m,bad){const t=$('#toast');t.textContent=m;t.className=bad?'bad':'';t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3800)}
+const custOpts=()=>S.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+const accOpts=()=>S.accounts.map(a=>`<option value="${a.no}">${a.no} · ${esc(cust(a.cust).name)} · ${inr(a.bal)}${a.status==='Frozen'?' · FROZEN':''}</option>`).join('');
+const maskPan=p=>can('pii.full')?p:p.slice(0,2)+'•••••'+p.slice(-1);
+const maskPh=p=>can('pii.full')?p:p.slice(0,-4).replace(/\d/g,'•')+p.slice(-4);
+const lockMsg=p=>`<div class="lock">Your role (${esc(me().title)}) cannot do this. Needs: ${esc(PERM_LABEL[p])}. Switch role at the top to try it.</div>`;
+const emi=(P,rate,n)=>{const r=rate/1200;return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1)};
+
+/* ---------- views ---------- */
+function pendingCount(){
+  return S.payments.filter(p=>['Pending approval','AML hold'].includes(p.status)).length+S.swift.filter(s=>s.status==='Pending release').length+S.loans.filter(l=>LOAN_OPEN.includes(l.status)).length+S.vault.moves.filter(m=>m.status==='Pending').length;
+}
+function vDash(){
+  const dep=S.accounts.reduce((a,b)=>a+b.bal,0),out=S.loans.filter(l=>l.status==='Active'&&l.product!=='od').reduce((a,b)=>a+b.amount,0);
+  const openG=S.grv.filter(g=>g.status==='Open'),od=openG.filter(g=>Date.now()>g.opened+g.sla*3600e3).length;
+  const queue=[];
+  if(can('payments.approve'))S.payments.filter(p=>p.status==='Pending approval').forEach(p=>queue.push(['Payment '+p.id+' '+inr(p.amount)+' awaits approval','pay']));
+  if(can('aml.review'))S.payments.filter(p=>p.status==='AML hold').forEach(p=>queue.push(['Payment '+p.id+' '+inr(p.amount)+' on AML hold','pay']));
+  if(can('loans.sanction'))S.loans.filter(l=>l.status==='Credit review').forEach(l=>queue.push(['Loan '+l.id+' awaits sanction','loan']));
+  if(can('loans.disburse'))S.loans.filter(l=>l.status==='Sanctioned').forEach(l=>queue.push(['Loan '+l.id+' ready to disburse','loan']));
+  if(can('loans.create'))S.loans.filter(l=>l.status==='Valuation').forEach(l=>queue.push(['Home loan '+l.id+' needs a valuation','loan']));
+  if(can('loans.sanction'))S.loans.filter(l=>l.status==='Legal').forEach(l=>queue.push(['Home loan '+l.id+' awaits legal clearance','loan']));
+  if(can('vault.custodian'))S.vault.moves.filter(m=>m.status==='Pending'&&m.byRole!==S.role).forEach(m=>queue.push(['Vault movement '+m.id+' needs your signature','vault']));
+  if(can('payments.approve'))S.swift.filter(s=>s.status==='Pending release'&&s.byRole!==S.role).forEach(s=>queue.push(['Remittance '+s.id+' awaits release','fx']));
+  if(can('grievance.manage'))openG.filter(g=>g.owner==='Unassigned').forEach(g=>queue.push(['Grievance '+g.id+' is unassigned','grv']));
+  return `<div class="head"><div><h2>Dashboard</h2><p>${esc(me().name)}, ${esc(me().title)}. Park Street branch.</p></div></div>
+  <div class="kpis"><div class="kpi"><small>Deposits</small><b>${inr(dep)}</b></div><div class="kpi"><small>Loans outstanding</small><b>${inr(out)}</b></div><div class="kpi"><small>Pending approvals</small><b>${pendingCount()}</b></div><div class="kpi"><small>Open grievances</small><b>${openG.length}</b>${od?`<small class="badc">${od} past SLA</small>`:''}</div></div>
+  <div class="grid">
+   <div class="card"><h3>Your queue</h3><div class="list" style="margin-top:10px">${queue.map(q=>`<div class="row" style="justify-content:space-between"><span>${esc(q[0])}</span><button class="btn ghost sm" data-go="${q[1]}">Open</button></div>`).join('')||'<span class="note">Nothing waiting for this role.</span>'}</div></div>
+   <div class="card"><h3>What this role can do</h3><div class="chips" style="margin-top:10px">${me().perms.map(p=>pill(PERM_LABEL[p])).join('')}</div><p class="note">Permissions are checked on every action. Money moves need a second person: the maker cannot approve their own item.</p></div>
+  </div>
+  <div class="card"><h3>Branch identity codes</h3>${tbl(['Branch','IFSC','MICR','SWIFT/BIC','Services'],S.branches.map(b=>`<tr><td>${esc(b.n)}</td><td class="mono">${b.ifsc}</td><td class="mono">${b.micr}</td><td class="mono">${b.bic}</td><td>${esc(b.svc)}</td></tr>`))}<p class="note">Sample codes. IFSC is 4 letters, a zero, then 6 characters. BIC8 identifies the institution, BIC11 adds the branch.</p></div>`;
+}
+const EVT_TYPES=[['all','All'],['payment','Payments'],['loan','Loans'],['account','Accounts and KYC'],['grievance','Grievances'],['compliance','Compliance']];
+function evType(a){if(/^aml|sanctions/.test(a))return'compliance';if(/^(payment|fx|neft|transaction)/.test(a))return'payment';if(/^loan/.test(a))return'loan';if(/^(kyc|account|customer|consent)/.test(a))return'account';if(/^grievance/.test(a))return'grievance';return'other'}
+function custEvents(id){
+  const ev=S.hist.filter(h=>h.cust===id).map(h=>({ts:h.ts,code:h.code,text:h.text,actor:h.actor||'System',type:evType(h.code)}));
+  S.audit.filter(e=>e.cust===id).forEach(e=>ev.push({ts:e.ts,code:e.action,text:e.detail,actor:e.actor,type:evType(e.action),n:e.n,hash:e.hash}));
+  return ev.sort((a,b)=>b.ts-a.ts);
+}
+const evHtml=ev=>`<ul class="tl">${ev.map(e=>`<li class="${e.type}"><div class="row" style="justify-content:space-between;gap:6px"><span class="mono">${esc(e.code)}</span><span class="note">${tmy(e.ts)}</span></div><div>${esc(e.text)}</div><div class="note">${esc(e.actor)}${e.n?' · chain #'+e.n+' · '+e.hash.slice(0,8):''}</div></li>`).join('')||'<li class="note">No events yet.</li>'}</ul>`;
+const kv=a=>`<dl class="kv">${a.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+const txRow=t=>`<tr class="clk" data-tx="${t.id}"><td>${tm(t.ts)}</td><td class="mono">${t.id}</td><td>${esc(t.desc)}</td><td>${esc(t.rail)}</td><td class="num ${t.dir==='credit'?'cr':''}">${t.dir==='credit'?'+':'−'}${inr(t.amount)}</td><td class="num">${inr(t.bal)}</td></tr>`;
+function vCustList(){
+  const q=S.cuQ.toLowerCase();
+  const rows=S.customers.filter(c=>!q||(c.name+' '+c.id+' '+c.type).toLowerCase().includes(q)).map(c=>{const bal=S.accounts.filter(a=>a.cust===c.id).reduce((x,a)=>x+a.bal,0);return `<tr class="clk" data-open-cust="${c.id}"><td><a href="#" class="lnk" data-open-cust="${c.id}">${esc(c.name)}</a><div class="note">${c.id}</div></td><td>${c.type}</td><td>${pill(c.kyc,stKind(c.kyc))}</td><td>${pill(c.risk,stKind(c.risk))}</td><td class="num">${inr(bal)}</td><td>${dt(c.created)}</td></tr>`});
+  return `<div class="head"><div><h2>Customers</h2><p>Open a customer to see their full 360 view and event log.</p></div><input id="cu-q" type="search" placeholder="Search name or ID" value="${esc(S.cuQ)}" aria-label="Search customers"></div><div class="card">${tbl(['Customer','Type','KYC','Risk','Total balance','Customer since'],rows)}</div>`;
+}
+function vCust(){
+  if(!S.custOpen)return vCustList();
+  const c=cust(S.custOpen),accs=S.accounts.filter(a=>a.cust===c.id),ls=S.loans.filter(l=>l.cust===c.id),gs=S.grv.filter(g=>g.cust===c.id);
+  const txs=S.txns.filter(t=>t.cust===c.id).sort((a,b)=>b.ts-a.ts);
+  const total=accs.reduce((x,a)=>x+a.bal,0),out=ls.filter(l=>l.status==='Active'&&l.product!=='od').reduce((x,l)=>x+l.amount,0);
+  const spend=txs.filter(t=>t.dir==='debit'&&t.ts>Date.now()-30*864e5).reduce((x,t)=>x+t.amount,0);
+  const ev=custEvents(c.id).filter(e=>S.evFilter==='all'||e.type===S.evFilter).slice(0,40);
+  const chips=EVT_TYPES.map(([k,l])=>`<button class="btn ${S.evFilter===k?'':'ghost'} sm" data-ev="${k}">${l}</button>`).join('');
+  const cs=c.consents||{};
+  return `<div class="crumb"><a href="#" class="lnk" data-back>Customers</a> / ${esc(c.name)}</div>
+  <div class="head"><div><h2>${esc(c.name)}</h2><p>${c.id} · ${c.type} · Customer since ${dt(c.created)}</p><div class="chips" style="margin-top:8px">${pill('KYC '+c.kyc,stKind(c.kyc))}${pill('Risk '+c.risk,stKind(c.risk))}${accs.some(a=>a.status==='Frozen')?pill('Has frozen account','bad'):''}</div></div>
+   <div class="row">${can('customers.edit')?`<button class="btn ghost" data-act="kyc" data-arg="${c.id}">Request KYC refresh</button>`:''}${can('accounts.manage')?'<button class="btn ghost" data-go="acct">Open account</button>':''}${can('grievance.create')?'<button class="btn" data-go="grv">Register grievance</button>':''}</div></div>
+  <div class="kpis">${kp('Total balance',inr(total),accs.length+' account'+(accs.length===1?'':'s'))}${kp('Loans outstanding',inr(out))}${kp('Spend, last 30 days',inr(spend))}${kp('Open grievances',gs.filter(g=>g.status==='Open').length)}${kp('Bureau score',c.score)}</div>
+  <div class="cdet"><div class="col">
+   <div class="card"><h3>Accounts</h3>${tbl(['Account','Type','Status','Balance'],accs.map(a=>`<tr class="clk" data-open-acct="${a.no}"><td class="mono">${a.no}</td><td>${a.type}${a.od?' · OD limit '+inr(a.od):''}</td><td>${pill(a.status,stKind(a.status))}</td><td class="num">${inr(a.bal)}</td></tr>`))}</div>
+   <div class="card"><div class="row" style="justify-content:space-between"><h3>Recent transactions</h3><button class="btn ghost sm" data-txq="${esc(c.name)}">View all</button></div>${tbl(['Time','ID','Description','Rail','Amount','Balance'],txs.slice(0,8).map(txRow))}</div>
+   <div class="card"><h3>Loans</h3>${tbl(['Loan','Product','Amount','Status'],ls.map(l=>`<tr><td class="mono">${l.id}</td><td>${PRODUCTS[l.product].label}</td><td class="num">${inr(l.amount)}</td><td>${pill(l.status,stKind(l.status))}</td></tr>`))}</div>
+   <div class="card"><h3>Grievances</h3>${tbl(['Ticket','Category','Opened','Status'],gs.map(g=>`<tr><td class="mono">${g.id}</td><td>${esc(g.cat)}</td><td>${tm(g.opened)}</td><td>${pill(g.status,stKind(g.status))}</td></tr>`))}</div>
+   <div class="card"><h3>Events and logs</h3><div class="chips" style="margin-top:8px">${chips}</div>${evHtml(ev)}<p class="note">Every entry marked with a chain number is part of the hash-chained audit trail.</p></div>
+  </div><div class="col">
+   <div class="card"><h3>Details</h3>${kv([['Customer ID','<span class="mono">'+c.id+'</span>'],['Type',c.type],['Email',esc(can('pii.full')?c.email:c.email.replace(/^.{2}[^@]*/,'••••'))],['Phone','<span class="mono">'+esc(maskPh(c.phone))+'</span>'],['PAN','<span class="mono">'+esc(maskPan(c.pan))+'</span>'],['Branch',esc(c.branch)],['Relationship manager',esc(c.rm)],['Nominee',esc(c.nominee)]])}${!can('pii.full')?'<p class="note">Contact details and PAN are masked for your role.</p>':''}</div>
+   <div class="card"><h3>Consents</h3><div class="list" style="margin-top:10px">${Object.entries(cs).map(([k,v])=>`<div class="row" style="justify-content:space-between"><span>${esc(k)}</span>${pill(v?'Granted':'Not granted',v?'good':'mute')}</div>`).join('')}</div></div>
+   <div class="card"><h3>KYC and risk</h3>${kv([['KYC status',pill(c.kyc,stKind(c.kyc))],['Risk rating',pill(c.risk,stKind(c.risk))],['Bureau score',c.score],['Monthly income',inr(c.income)],['Existing EMI',inr(c.emi)]])}</div>
+  </div></div>`;
+}
+function vAcct(){
+  if(S.acctOpen){
+    const a=S.accounts.find(x=>x.no===S.acctOpen),c=cust(a.cust),txs=S.txns.filter(t=>t.acct===a.no).sort((x,y)=>y.ts-x.ts);
+    const ev=custEvents(a.cust).filter(e=>e.text.includes(a.no)||e.code.startsWith('account')&&e.text.includes(a.no)).slice(0,20);
+    return `<div class="crumb"><a href="#" class="lnk" data-back>Accounts</a> / ${a.no}</div>
+    <div class="head"><div><h2>${a.type} account <span class="mono">${a.no}</span></h2><p>${clink(c.id)} · opened ${dt(a.opened)}</p><div class="chips" style="margin-top:8px">${pill(a.status,stKind(a.status))}${a.od?pill('OD limit '+inr(a.od),'gold'):''}</div></div>
+     <div class="row">${can('accounts.manage')?(a.status==='Active'?`<button class="btn bad" data-act="acctFreeze" data-arg="${a.no}">Freeze account</button>`:`<button class="btn" data-act="acctUnfreeze" data-arg="${a.no}">Unfreeze account</button>`):''}</div></div>
+    <div class="kpis">${kp('Balance',inr(a.bal))}${kp('Available to spend',inr(a.bal+(a.od||0)),a.od?'Includes overdraft limit':'')}${kp('Transactions',txs.length)}</div>
+    <div class="cdet"><div class="col"><div class="card"><h3>Statement</h3>${tbl(['Time','ID','Description','Rail','Amount','Balance'],txs.map(txRow))}</div></div>
+    <div class="col"><div class="card"><h3>Details</h3>${kv([['Account number','<span class="mono">'+a.no+'</span>'],['Type',a.type],['Status',pill(a.status,stKind(a.status))],['Customer',clink(c.id)],['Branch',esc(c.branch)],['IFSC','<span class="mono">SMPL0000101</span>'],['Opened',dt(a.opened)]])}</div>
+    <div class="card"><h3>Account events</h3>${evHtml(ev)}</div></div></div>`;
+  }
+  const form=can('accounts.manage')?`<form data-form="acct"><h3>Open account</h3><div class="f"><label for="a-c">Customer</label><select id="a-c" name="cust">${custOpts()}</select></div><div class="f"><label for="a-t">Type</label><select id="a-t" name="type"><option>Savings</option><option>Current</option></select></div><div class="f"><label for="a-d">Opening deposit (₹)</label><input id="a-d" name="deposit" type="number" min="0" value="5000"></div><button class="btn" type="submit">Open account</button><p class="note">KYC must be verified. Minimum deposit ₹1,000 for savings, ₹10,000 for current. Try Meera Das: her KYC is due for refresh.</p></form>`:lockMsg('accounts.manage');
+  const rows=S.accounts.map(a=>`<tr class="clk" data-open-acct="${a.no}"><td class="mono">${a.no}</td><td>${clink(a.cust)}</td><td>${a.type}${a.od?' · OD '+inr(a.od):''}</td><td>${pill(a.status,stKind(a.status))}</td><td class="num">${inr(a.bal)}</td><td>${dt(a.opened)}</td></tr>`);
+  return `<div class="head"><div><h2>Accounts</h2><p>Savings and current accounts. Open one to see its statement.</p></div></div><div class="split"><div class="card">${form}</div><div class="card"><h3>All accounts</h3>${tbl(['Account','Customer','Type','Status','Balance','Opened'],rows)}</div></div>`;
+}
+function vTxn(){
+  let list=S.txns.slice().sort((a,b)=>b.ts-a.ts);const q=S.txQ.toLowerCase();
+  if(S.txType!=='all')list=list.filter(t=>t.dir===S.txType);
+  if(S.txRail!=='all')list=list.filter(t=>t.rail===S.txRail);
+  if(S.txAcct!=='all')list=list.filter(t=>t.acct===S.txAcct);
+  if(q)list=list.filter(t=>(t.id+' '+t.desc+' '+t.ref+' '+t.acct+' '+cust(t.cust).name).toLowerCase().includes(q));
+  const cr=list.filter(t=>t.dir==='credit').reduce((x,t)=>x+t.amount,0),dr=list.filter(t=>t.dir==='debit').reduce((x,t)=>x+t.amount,0);
+  const sel=S.txns.find(t=>t.id===S.txSel);
+  const rails=['Same bank','IMPS','NEFT','UPI','SWIFT','Cash','Internal'];
+  const rows=list.slice(0,100).map(t=>`<tr class="clk ${t.id===S.txSel?'on':''}" data-tx="${t.id}"><td>${tm(t.ts)}</td><td class="mono">${t.id}</td><td>${alink(t.acct)}<div class="note">${clink(t.cust)}</div></td><td>${esc(t.desc)}</td><td>${esc(t.rail)}</td><td class="num ${t.dir==='credit'?'cr':''}">${t.dir==='credit'?'+':'−'}${inr(t.amount)}</td><td class="num">${inr(t.bal)}</td></tr>`);
+  let det='';
+  if(sel){
+    const pay=S.payments.find(p=>p.id===sel.ref),ev=S.audit.filter(e=>e.entity===sel.ref||e.detail.includes(sel.ref)&&sel.ref).map(e=>({ts:e.ts,code:e.action,text:e.detail,actor:e.actor,type:evType(e.action),n:e.n,hash:e.hash})).reverse();
+    det=`<div class="col"><div class="card"><div class="row" style="justify-content:space-between"><h3>Transaction <span class="mono">${sel.id}</span></h3><button class="btn ghost sm" data-clear-tx>Close</button></div><div class="bal ${sel.dir==='credit'?'cr':''}">${sel.dir==='credit'?'+':'−'}${inr(sel.amount)}</div>${kv([['Time',tmy(sel.ts)],['Direction',pill(sel.dir==='credit'?'Credit':'Debit',sel.dir==='credit'?'good':'')],['Account',alink(sel.acct)],['Customer',clink(sel.cust)],['Description',esc(sel.desc)],['Rail',esc(sel.rail)],['Reference','<span class="mono">'+esc(sel.ref||'none')+'</span>'],['Balance after',inr(sel.bal)]].concat(pay?[['Payment status',pill(pay.status,stKind(pay.status))],['Rail reference','<span class="mono">'+esc(pay.ref||'pending')+'</span>']]:[]))}</div><div class="card"><h3>Events</h3>${evHtml(ev)}</div></div>`;
+  }
+  return `<div class="head"><div><h2>Transactions</h2><p>Every credit and debit across all accounts. Select one for details and events.</p></div></div>
+  <div class="kpis">${kp('Matching transactions',list.length)}${kp('Total credits',inr(cr))}${kp('Total debits',inr(dr))}</div>
+  <div class="card"><div class="row"><input id="tx-q" type="search" placeholder="Search ID, name, account, reference" value="${esc(S.txQ)}" aria-label="Search transactions" style="flex:1 1 220px"><select id="tx-type" aria-label="Direction"><option value="all">All directions</option><option value="credit" ${S.txType==='credit'?'selected':''}>Credits</option><option value="debit" ${S.txType==='debit'?'selected':''}>Debits</option></select><select id="tx-rail" aria-label="Rail"><option value="all">All rails</option>${rails.map(r=>`<option ${S.txRail===r?'selected':''}>${r}</option>`).join('')}</select><select id="tx-acct" aria-label="Account"><option value="all">All accounts</option>${S.accounts.map(a=>`<option value="${a.no}" ${S.txAcct===a.no?'selected':''}>${a.no}</option>`).join('')}</select></div></div>
+  <div class="${sel?'cdet':''}"><div class="card">${tbl(['Time','ID','Account','Description','Rail','Amount','Balance'],rows)}${list.length>100?'<p class="note">Showing the latest 100.</p>':''}</div>${det}</div>`;
+}
+function vPay(){
+  const rows=S.payments.map(p=>{
+    let acts='';
+    if(p.status==='Pending approval'&&can('payments.approve'))acts=p.byRole===S.role?'<span class="note">You created this</span>':`<button class="btn sm" data-act="payOk" data-arg="${p.id}">Approve</button> <button class="btn bad sm" data-act="payNo" data-arg="${p.id}">Reject</button>`;
+    if(p.status==='AML hold'&&can('aml.review'))acts=`<button class="btn sm" data-act="amlClear" data-arg="${p.id}">Clear hold</button> <button class="btn bad sm" data-act="payNo" data-arg="${p.id}">Reject</button>`;
+    return `<tr><td class="mono">${p.id}</td><td>${p.rail}</td><td>${esc(p.to)}</td><td class="num">${inr(p.amount)}</td><td>${pill(p.status,stKind(p.status))}${p.aml?' '+pill('AML flag','bad'):''}</td><td class="mono">${esc(p.ref||'')}</td><td>${acts}</td></tr>`}).reverse();
+  const form=can('payments.create')?`<form data-form="pay"><h3>New payment</h3>
+   <div class="f"><label for="p-from">From account</label><select id="p-from" name="from">${accOpts()}</select></div>
+   <div class="f"><label for="p-rail">Rail</label><select id="p-rail" name="rail"><option value="Same bank">Same bank (instant)</option><option value="IMPS">IMPS (instant, up to ₹5,00,000)</option><option value="NEFT">NEFT (half-hourly batch)</option><option value="UPI">UPI (up to ₹1,00,000)</option></select></div>
+   <div class="f"><label for="p-name">Beneficiary name</label><input id="p-name" name="name" value="Debasis Paul" required></div>
+   <div class="f" id="r-acct"><label for="p-acct">Beneficiary account number</label><input id="p-acct" name="acct" value="10010003" inputmode="numeric"></div>
+   <div class="f" id="r-ifsc"><label for="p-ifsc">Beneficiary IFSC</label><input id="p-ifsc" name="ifsc" value="ABCD0001234" maxlength="11" style="text-transform:uppercase"></div>
+   <div class="f" id="r-vpa"><label for="p-vpa">UPI ID</label><input id="p-vpa" name="vpa" value="debasis@okbank"></div>
+   <div class="f"><label for="p-amt">Amount (₹)</label><input id="p-amt" name="amount" type="number" min="1" step="0.01" value="25000" required></div>
+   <button class="btn" type="submit">Submit payment</button>
+   <p class="note">₹2,00,000 and above needs a checker. ₹10,00,000 and above is held for AML review first. Try a small one, then a large one, then switch role to approve.</p></form>`:lockMsg('payments.create');
+  return `<div class="head"><div><h2>Payments</h2><p>Same-bank, IMPS, NEFT and UPI through one payment hub.</p></div>${can('payments.approve')?`<button class="btn ghost" data-act="neftRun">Run NEFT batch (${S.payments.filter(p=>p.status==='Queued NEFT').length})</button>`:''}</div>
+  <div class="split"><div class="card">${form}</div><div class="card"><h3>Payment register</h3>${tbl(['Ref','Rail','Beneficiary','Amount','Status','Rail reference',''],rows)}</div></div>`;
+}
+function vLoan(){
+  const form=can('loans.create')?`<form data-form="loan"><h3>New loan application</h3>
+   <div class="f"><label for="l-c">Customer</label><select id="l-c" name="cust">${custOpts()}</select></div>
+   <div class="f"><label for="l-p">Product</label><select id="l-p" name="product"><option value="personal">Personal loan (12.5%)</option><option value="corporate">Corporate term loan (11%)</option><option value="gold">Gold loan (9.5%)</option><option value="home">Home loan (8.75%)</option><option value="od">Overdraft limit (11.5%)</option></select></div>
+   <div class="two"><div class="f"><label for="l-a">Amount (₹)</label><input id="l-a" name="amount" type="number" min="1000" value="400000" required></div><div class="f"><label for="l-t">Tenure (months)</label><input id="l-t" name="tenure" type="number" min="3" value="24" required></div></div>
+   <div id="l-gold" class="two"><div class="f"><label for="l-g">Gold weight (g)</label><input id="l-g" name="grams" type="number" step="0.1" value="60"></div><div class="f"><label for="l-k">Purity (karat)</label><select id="l-k" name="karat"><option>22</option><option>24</option><option>18</option></select></div><div class="f"><label for="l-r">Gold rate ₹/g (sample)</label><input id="l-r" name="grate" type="number" value="12000"></div></div>
+   <div id="l-home" class="f" hidden><label for="l-pv">Property value (₹)</label><input id="l-pv" name="pv" type="number" value="6000000"></div><div class="lock" id="l-prev"></div><button class="btn" type="submit">Run rules and submit</button></form>`:lockMsg('loans.create');
+  const list=S.loans.map(l=>{
+    let acts='';
+    if(l.status==='Credit review'&&can('loans.sanction'))acts=`<button class="btn sm" data-act="${l.product==='home'?'loanCheck':'loanSan'}" data-arg="${l.id}">${l.product==='home'?'Pass credit check':'Sanction'}</button> <button class="btn bad sm" data-act="loanNo" data-arg="${l.id}">Reject</button>`;
+    if(l.status==='Sanctioned'&&can('loans.disburse'))acts=`<button class="btn sm" data-act="loanDis" data-arg="${l.id}">Disburse</button>`;
+    if(l.status==='Valuation'&&can('loans.create'))acts=`<button class="btn sm" data-act="loanVal" data-arg="${l.id}">Record valuation</button>`;
+    if(l.status==='Legal'&&can('loans.sanction'))acts=`<button class="btn sm" data-act="loanLegal" data-arg="${l.id}">Clear legal and sanction</button>`;
+    if(l.status==='Active'&&l.schedule)acts=`<button class="btn ghost sm" data-act="sched" data-arg="${l.id}">${S.openSched===l.id?'Hide':'Show'} EMI schedule</button>`;
+    const ST=['Applied','Credit check','Valuation','Legal','Sanctioned','Disbursed'],ix={'Credit review':1,Valuation:2,Legal:3,Sanctioned:4,Active:5}[l.status];
+    const pipe=l.product==='home'&&ix!==undefined?`<div class="chips">${ST.map((x,i)=>pill(x,(i<ix||ix===5)?'good':i===ix?'warn':'mute')).join('')}</div>`:'';
+    const sch=S.openSched===l.id&&l.schedule?tbl(['#','Due','Principal','Interest','Balance'],l.schedule.slice(0,6).map(r=>`<tr><td>${r.i}</td><td>${dt(r.due)}</td><td class="num">${inr(r.pr)}</td><td class="num">${inr(r.int)}</td><td class="num">${inr(r.bal)}</td></tr>`))+`<p class="note">First 6 of ${l.schedule.length} instalments.</p>`:'';
+    return `<div class="item"><div class="row" style="justify-content:space-between"><b>${l.id} · ${clink(l.cust)}</b>${pill(l.status,stKind(l.status))}</div>
+     <div class="note">${PRODUCTS[l.product].label} · ${inr(l.amount)} · ${l.tenure} months at ${l.rate}% · ${l.product==='od'?'interest only on amount used':'EMI '+inr(l.emi)}${l.pv?' · property '+inr(l.pv):''}</div>
+     <div class="row"><span class="note">Rule engine:</span>${pill(l.decision,l.decision==='Approve'?'good':l.decision==='Refer'?'warn':'bad')}<span class="note">bureau ${l.score}, EMI to income ${(l.foir*100).toFixed(0)}%${l.gold?`, eligible gold value ${inr(l.gold.eligible)}`:''}</span></div>
+     ${pipe}${acts?`<div class="row">${acts}</div>`:''}${sch}</div>`}).reverse();
+  return `<div class="head"><div><h2>Loans</h2><p>Personal, corporate, gold, home and overdraft. Rule engine, sanction, disbursal, schedule.</p></div></div>
+  <div class="split"><div class="card">${form}</div><div class="list">${list.join('')||'<div class="card note">No applications.</div>'}</div></div>`;
+}
+function vVault(){
+  const cash=S.vault.cash,total=Object.entries(cash).reduce((a,[d,c])=>a+d*c,0);
+  const mv=S.vault.moves.map(m=>`<tr><td class="mono">${m.id}</td><td>${esc(m.type)}</td><td>${esc(m.desc)}</td><td>${esc(m.by)}</td><td>${pill(m.status,stKind(m.status))}${m.signer?'<div class="note">by '+esc(m.signer)+'</div>':''}</td><td>${m.status==='Pending'&&can('vault.custodian')&&m.byRole!==S.role?`<button class="btn sm" data-act="vSign" data-arg="${m.id}">Sign (second custodian)</button>`:m.status==='Pending'&&m.byRole===S.role?'<span class="note">Needs a different custodian</span>':''}</td></tr>`).reverse();
+  const f1=(can('vault.cash')||can('vault.custodian'))?`<form data-form="cash"><h3>Cash movement</h3><div class="f"><label for="c-t">Type</label><select id="c-t" name="type"><option value="issue">Issue to teller drawer</option><option value="receive">Receive from teller drawer</option></select></div><div class="two"><div class="f"><label for="c-d">Denomination</label><select id="c-d" name="denom">${Object.keys(cash).map(d=>`<option>${d}</option>`).join("")}</select></div><div class="f"><label for="c-n">Notes</label><input id="c-n" name="count" type="number" min="1" value="100"></div></div><button class="btn" type="submit">Create movement</button></form>`:lockMsg('vault.cash');
+  const f2=can('vault.custodian')?`<form data-form="gold"><h3>Gold release</h3><div class="f"><label for="g-p">Packet</label><select id="g-p" name="packet">${S.vault.gold.filter(g=>g.status==='In vault').map(g=>`<option value="${g.no}">${g.no} · ${g.grams} g ${g.karat}K · ${esc(cust(g.cust).name)}</option>`).join("")}</select></div><button class="btn" type="submit">Request release</button><p class="note">Release on loan closure or auction. A second custodian must sign.</p></form>`:'';
+  return `<div class="head"><div><h2>Money and gold vaults</h2><p>Dual control, denomination counts, packet tracking.</p></div></div>
+  <div class="grid"><div class="card"><h3>Cash vault</h3>${tbl(['Denomination','Notes','Value'],Object.entries(cash).map(([d,c])=>`<tr><td>₹${d}</td><td class="num">${c.toLocaleString('en-IN')}</td><td class="num">${inr(d*c)}</td></tr>`))}<p><b>Total ${inr(total)}</b></p></div>
+  <div class="card"><h3>Gold vault</h3>${tbl(['Packet','Loan','Customer','Weight','Slot','Status'],S.vault.gold.map(g=>`<tr><td class="mono">${g.no}</td><td class="mono">${g.loan}</td><td>${esc(cust(g.cust).name)}</td><td class="num">${g.grams} g ${g.karat}K</td><td class="mono">${g.slot}</td><td>${pill(g.status,stKind(g.status))}</td></tr>`))}</div></div>
+  <div class="grid"><div class="card">${f1}</div>${f2?`<div class="card">${f2}</div>`:''}</div>
+  <div class="card"><h3>Movements</h3>${tbl(['Ref','Type','Detail','Requested by','Status',''],mv)}</div>`;
+}
+function vFx(){
+  const rates=tbl(['Currency','We buy','We sell'],Object.entries(RATES).map(([c,r])=>`<tr><td>${c}</td><td class="num">${inr(r[0])}</td><td class="num">${inr(r[1])}</td></tr>`));
+  const form=can('forex.deal')?`<form data-form="fx"><h3>Outward remittance</h3>
+   <div class="f"><label for="x-c">Remitter</label><select id="x-c" name="cust">${custOpts()}</select></div>
+   <div class="two"><div class="f"><label for="x-cu">Currency</label><select id="x-cu" name="cur">${Object.keys(RATES).map(c=>`<option>${c}</option>`).join("")}</select></div><div class="f"><label for="x-a">Amount</label><input id="x-a" name="amount" type="number" min="1" value="5000"></div></div>
+   <div class="f"><label for="x-pu">Purpose</label><select id="x-pu" name="purpose"><option>Education fees</option><option>Family maintenance</option><option>Travel</option><option>Investment abroad</option></select></div>
+   <div class="f"><label for="x-bn">Beneficiary name</label><input id="x-bn" name="ben" value="Greenfield University" required></div>
+   <div class="f"><label for="x-bic">Beneficiary bank BIC</label><input id="x-bic" name="bic" value="CHASUS33XXX" maxlength="11" style="text-transform:uppercase"></div>
+   <div class="f"><label for="x-ac">Account or IBAN</label><input id="x-ac" name="iban" value="GB29NWBK60161331926819"></div>
+   <div class="f"><label for="x-ch">Charges</label><select id="x-ch" name="charges"><option>SHA</option><option>OUR</option><option>BEN</option></select></div>
+   <button class="btn" type="submit">Screen and create</button><p class="note">Checks BIC format, sanctions list (try the name "Red Dawn Exports"), and the USD 250,000 yearly limit per customer.</p></form>`:lockMsg('forex.deal');
+  const rows=S.swift.map(s=>`<tr><td class="mono">${s.id}</td><td>${esc(cust(s.cust).name)}</td><td class="num">${s.amount.toLocaleString('en-IN')} ${s.cur}</td><td class="num">${inr(s.inr)}</td><td>${pill(s.status,stKind(s.status))}${s.ack?'<div class="note">'+esc(s.ack)+'</div>':''}</td><td><button class="btn ghost sm" data-act="msg" data-arg="${s.id}">MT103</button> ${s.status==='Pending release'&&can('payments.approve')?(s.byRole===S.role?'<span class="note">You created this</span>':`<button class="btn sm" data-act="fxOk" data-arg="${s.id}">Release</button>`):''}</td></tr>`).reverse();
+  const open=S.swift.find(s=>s.id===S.openMsg);
+  return `<div class="head"><div><h2>Forex and SWIFT</h2><p>Rates, limits, screening and message preview. SWIFT sending is simulated.</p></div></div>
+  <div class="grid"><div class="card">${form}</div><div class="card"><h3>Sample rate card</h3>${rates}<p class="note">Indicative sample rates, not live.</p></div></div>
+  <div class="card"><h3>Remittances</h3>${tbl(['Ref','Remitter','Foreign amount','INR','Status',''],rows)}${open?`<h3 style="margin-top:12px">Message ${open.id}</h3><div class="pre">${esc(open.mt)}</div>`:''}</div>`;
+}
+function slaInfo(g){const left=(g.opened+g.sla*3600e3-Date.now())/3600e3;return left<0?`<span class="badc">${Math.ceil(-left)} h past SLA</span>`:`${Math.floor(left)} h left of ${g.sla} h`}
+function vGrv(){
+  const form=can('grievance.create')?`<form data-form="grv"><h3>Register grievance</h3><div class="f"><label for="g-c">Customer</label><select id="g-c" name="cust">${custOpts()}</select></div><div class="f"><label for="g-cat">Category</label><select id="g-cat" name="cat"><option>Failed transaction</option><option>Charges dispute</option><option>Unauthorised transaction</option><option>Service delay</option><option>Gold loan</option></select></div><div class="f"><label for="g-t">Details</label><textarea id="g-t" name="text" rows="3" required>Customer reports a problem.</textarea></div><button class="btn" type="submit">Register</button></form>`:lockMsg('grievance.create');
+  const list=S.grv.map(g=>`<div class="item"><div class="row" style="justify-content:space-between"><b>${g.id} · ${clink(g.cust)}</b><div class="row">${pill('Level '+g.level,g.level>1?'warn':'')}${pill(g.status,stKind(g.status))}</div></div><div>${esc(g.cat)}: ${esc(g.text)}</div><div class="note">Owner ${esc(g.owner)} · opened ${tm(g.opened)} · ${g.status==='Open'?slaInfo(g):'closed'}</div>${g.note?`<div class="note">Resolution: ${esc(g.note)}</div>`:''}${g.status==='Open'&&can('grievance.manage')?`<div class="row"><button class="btn ghost sm" data-act="grvAssign" data-arg="${g.id}">Assign to me</button><button class="btn ghost sm" data-act="grvEsc" data-arg="${g.id}">Escalate</button><button class="btn sm" data-act="grvRes" data-arg="${g.id}">Resolve</button></div>`:''}</div>`);
+  return `<div class="head"><div><h2>Grievances</h2><p>Ticket, SLA clock, escalation levels, resolution and compensation.</p></div></div><div class="split"><div class="card">${form}</div><div class="list">${list.join('')}</div></div>`;
+}
+function vAud(){
+  const v=verify(),rows=S.audit.slice().reverse().map(e=>`<tr><td class="mono">${e.n}</td><td>${tm(e.ts)}</td><td>${esc(e.actor)}</td><td>${esc(e.action)}</td><td>${esc(e.detail)}</td><td class="mono">${e.hash.slice(0,10)}</td></tr>`);
+  return `<div class="head"><div><h2>Audit trail and blockchain anchoring</h2><p>Every action is hash-chained. Every 5 entries, a root is anchored on a permissioned chain (simulated here).</p></div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><div><b class="${v.ok?'ok':'badc'}">${v.ok?'Chain verified: no entry has been altered.':'Tamper detected at entry '+v.at+(v.anchor?' (anchor '+v.anchor+')':'')+'.'}</b><div class="note">Prototype hash. Production uses SHA-256 and a Hyperledger Fabric channel.</div></div>
+  <div class="row">${S.tampered?'<button class="btn ghost" data-act="untamper">Restore entry</button>':'<button class="btn bad" data-act="tamper">Simulate tampering</button>'}</div></div></div>
+  <div class="card"><h3>Anchors</h3>${tbl(['Anchor','Entries','Root','Time'],S.anchors.map(a=>`<tr><td>#${a.id}</td><td>${a.from} to ${a.to}</td><td class="mono">${a.root}</td><td>${tm(a.at)}</td></tr>`).reverse())}</div>
+  <div class="card"><h3>Log</h3>${tbl(['#','Time','Actor','Action','Detail','Hash'],rows)}</div>`;
+}
+const bar=(l,v,pc,k)=>`<div><div class="row" style="justify-content:space-between"><span>${l}</span><b>${v}</b></div><div style="height:8px;background:var(--line);border-radius:4px;margin:4px 0 10px"><div style="height:8px;width:${pc}%;background:var(--${k||'accent'});border-radius:4px"></div></div></div>`;
+const kp=(a,b,c)=>`<div class="kpi"><small>${a}</small><b>${b}</b>${c?`<small>${c}</small>`:''}</div>`;
+const rws=a=>a.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>');
+const mn=t=>`<span class="mono">${t}</span>`;
+const later=(t,sub)=>`<div class="head"><div><h2>${t}</h2><p>${sub} Read-only preview with sample figures. No actions yet.</p></div>${pill('Later phase','gold')}</div>`;
+function vIns(){return later('Insurance, life and general','Policies, claims, renewals and agents.')+`<div class="kpis">${kp('Active policies','28,456','Life 12.4k · General 16k')}${kp('Premium collected (MTD)','₹48.2 Cr')}${kp('Open claims','342','Average settlement 8.2 days')}${kp('Claims paid (YTD)','₹186 Cr','Loss ratio 68%')}</div>
+<div class="grid"><div class="card"><h3>Recent policies</h3>${tbl(['Policy','Customer','Product','Premium','Status'],rws([[mn('LI-882914'),'Amitabh Rao',pill('Term life'),'₹24,800 /yr',pill('Active','good')],[mn('GI-441203'),'Sunita Motors',pill('Motor'),'₹18,450',pill('Active','good')],[mn('LI-882901'),'Priya Nair',pill('ULIP'),'₹1,20,000 /yr',pill('Active','good')],[mn('GI-441198'),'Rahul and Family',pill('Health'),'₹32,600 /yr',pill('Pending','warn')],[mn('GI-441185'),'Green Valley Resorts',pill('Property'),'₹4.8 L',pill('Active','good')]]))}</div>
+<div class="card"><h3>Claims by status</h3>${bar('Registered',86,25)}${bar('Under investigation',124,36,'warn')}${bar('Approved',92,27,'good')}${bar('Rejected or closed',40,12,'bad')}</div></div>`}
+function vMf(){return later('Mutual funds','Schemes, investors, SIPs, orders and NAV.')+`<div class="kpis">${kp('Assets under management','₹3,842 Cr','Up 9.4% this quarter')}${kp('Active investors','1,28,450','2,840 added this month')}${kp('Active SIPs','86,220','Monthly inflow ₹42 Cr')}${kp('Transactions today','1,842','Purchase 1,210 · Redeem 632')}</div>
+<div class="grid"><div class="card"><h3>Top schemes, 1 year</h3>${tbl(['Scheme','Category','NAV','1Y return','AUM'],rws([['Nexus Flexi Cap Fund',pill('Equity'),'₹184.62','<b class="ok">+28.4%</b>','₹842 Cr'],['Nexus Midcap Opportunities',pill('Equity'),'₹96.18','<b class="ok">+32.1%</b>','₹512 Cr'],['Nexus Balanced Advantage',pill('Hybrid','warn'),'₹48.75','<b class="ok">+16.8%</b>','₹1,240 Cr'],['Nexus Liquid Fund',pill('Debt','good'),'₹1,248.32','<b class="ok">+7.2%</b>','₹2,180 Cr'],['Nexus Small Cap Fund',pill('Equity'),'₹72.40','<b class="ok">+35.6%</b>','₹386 Cr']]))}</div>
+<div class="card"><h3>SIP overview</h3>${bar('Monthly SIP inflow','₹42.6 Cr',78)}<div class="row" style="justify-content:space-between"><span>New SIPs this month</span><b>4,280</b></div><div class="row" style="justify-content:space-between;margin-top:6px"><span>SIP cancellations</span><b class="badc">312</b></div><div class="row" style="justify-content:space-between;margin-top:6px"><span>Average SIP amount</span><b>₹4,940</b></div></div></div>`}
+function vPen(){return later('Pension','Subscribers, employer schemes, contributions, annuity and payouts.')+`<div class="kpis">${kp('Members','2,48,920','1,240 joined this month')}${kp('Corpus under management','₹18,420 Cr','Up 6.8% year on year')}${kp('Monthly contributions','₹186 Cr','Employee and employer')}${kp('Active pensioners','42,680','Monthly payout ₹124 Cr')}</div>
+<div class="grid"><div class="card"><h3>Recent member activity</h3>${tbl(['Member','Name','Scheme','Contribution','Status','Date'],rws([[mn('PEN-884210'),'Ramesh Iyer',pill('NPS Tier-I'),'₹12,500',pill('Credited','good'),'25 Nov'],[mn('PEN-884198'),'Sunita Kapoor',pill('Corporate'),'₹28,000',pill('Credited','good'),'25 Nov'],[mn('PEN-884175'),'Vikram Desai',pill('NPS Tier-I'),'₹8,200',pill('Pending','warn'),'24 Nov'],[mn('PEN-884142'),'Anjali Mehta',pill('Annuity'),'None',pill('Payout'),'24 Nov'],[mn('PEN-884098'),'Corporate batch (142)',pill('Corporate'),'₹42.8 L',pill('Credited','good'),'23 Nov']]))}</div>
+<div class="list"><div class="card"><h3>Scheme mix</h3>${bar('NPS (Tier I and II)','58%',58)}${bar('Corporate pension','27%',27,'good')}${bar('Annuity','15%',15,'gold')}</div><div class="card"><h3>Upcoming payouts</h3><div class="row" style="justify-content:space-between"><span>This week</span><b>₹18.4 Cr</b></div><div class="row" style="justify-content:space-between;margin-top:6px"><span>Next week</span><b>₹22.1 Cr</b></div><div class="row" style="justify-content:space-between;margin-top:6px"><span>This month</span><b>₹124 Cr</b></div><p class="note">47 members retire in the next 90 days.</p></div></div></div>`}
+function vRoles(){
+  const roles=Object.entries(ROLES),perms=Object.keys(PERM_LABEL);
+  return `<div class="head"><div><h2>Staff and roles</h2><p>Who can do what. Switch role at the top to see these rules enforced.</p></div></div><div class="card"><div class="scroll"><table><thead><tr><th>Permission</th>${roles.map(([k,r])=>`<th style="${k===S.role?'color:var(--accent)':''}">${esc(r.title)}<br>${esc(r.name)}</th>`).join('')}</tr></thead><tbody>${perms.map(p=>`<tr><td>${esc(PERM_LABEL[p])}</td>${roles.map(([k,r])=>`<td style="text-align:center">${r.perms.includes(p)?'<b class="ok">✓</b>':'<span class="note">·</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+}
+const VIEWS={acct:vAcct,txn:vTxn,roles:vRoles,ins:vIns,mf:vMf,pen:vPen,dash:vDash,cust:vCust,pay:vPay,loan:vLoan,vault:vVault,fx:vFx,grv:vGrv,aud:vAud};
+
+/* ---------- render ---------- */
+function render(){
+  const allowed=NAV.filter(n=>!n[2]||can(n[2]));
+  if(!allowed.some(n=>n[0]===S.view))S.view='dash';
+  const badge={pay:S.payments.filter(p=>['Pending approval','AML hold'].includes(p.status)).length,loan:S.loans.filter(l=>LOAN_OPEN.includes(l.status)).length,vault:S.vault.moves.filter(m=>m.status==='Pending').length,fx:S.swift.filter(s=>s.status==='Pending release').length,grv:S.grv.filter(g=>g.status==='Open').length};
+  $('#nav').innerHTML=allowed.map(n=>`<button data-go="${n[0]}" ${S.view===n[0]?'aria-current="true"':''}><span>${n[1]}</span>${n[3]?'<span class="n" style="background:var(--line);color:var(--muted)">later</span>':''}${badge[n[0]]?`<span class="n">${badge[n[0]]}</span>`:''}</button>`).join('');
+  $('#main').innerHTML=VIEWS[S.view]();
+  railUI();prevLoan();
+}
+function railUI(){
+  const r=$('#p-rail');if(!r)return;const v=r.value;
+  $('#r-acct').hidden=v==='UPI';$('#r-ifsc').hidden=!(v==='IMPS'||v==='NEFT');$('#r-vpa').hidden=v!=='UPI';
+}
+function prevLoan(){
+  const el=$('#l-prev');if(!el)return;
+  const k=$('#l-p').value,p=PRODUCTS[k],a=+$('#l-a').value,t=+$('#l-t').value;
+  $('#l-gold').hidden=k!=='gold';$('#l-home').hidden=k!=='home';
+  if(!(a>0&&t>0)){el.textContent='';return}
+  let s=k==='od'?`Overdraft: ${p.rate}% interest only on the amount used (about ${inr(a*p.rate/1200)} a month if fully used). Limit up to ${inr(p.max)}, reviewed every 12 months.`:`EMI about ${inr(emi(a,p.rate,t))} at ${p.rate}% for ${t} months. Limit ${inr(p.max)}, tenure ${p.minT} to ${p.maxT} months.`;
+  if(k==='gold'){const el2=(+$('#l-g').value)*(+$('#l-k').value)/24*(+$('#l-r').value)*0.75;s+=` Eligible gold value at 75% LTV: ${inr(el2)}.`}
+  if(k==='home'){const pv=+$('#l-pv').value;if(pv>0)s+=` Maximum loan at 80% of property value: ${inr(pv*0.8)}.`}
+  el.textContent=s;
+}
+
+/* ---------- actions ---------- */
+function execPay(p){
+  if(p.rail==='Same bank'){const t=S.accounts.find(a=>a.no===p.acct);if(t){t.bal+=p.amount;post(t,'credit',p.amount,'Transfer from '+p.from,p.id,'Same bank')}p.status='Completed';p.ref='INT'+rnd(8)}
+  else if(p.rail==='IMPS'){p.status='Completed';p.ref='RRN '+rnd(12)}
+  else if(p.rail==='UPI'){p.status='Completed';p.ref='UPI'+rnd(12)}
+  else{p.status='Queued NEFT';p.ref='Awaiting batch'}
+}
+const FORMS={
+ acct(f){
+  const c=cust(f.cust),dep=+f.deposit,min=f.type==='Savings'?1000:10000;
+  if(c.kyc!=='Verified')return toast(c.name+' has KYC status "'+c.kyc+'". Complete KYC before opening an account.',1);
+  if(!(dep>=min))return toast('Minimum opening deposit for a '+f.type.toLowerCase()+' account is '+inr(min)+'.',1);
+  const no=String(Math.max(...S.accounts.map(a=>+a.no))+1),a={no,cust:c.id,type:f.type,bal:dep,status:'Active',opened:Date.now()};
+  S.accounts.push(a);post(a,'credit',dep,'Opening deposit (cash)',no,'Cash');
+  log('account.open',no,f.type+' account '+no+' opened with '+inr(dep),c.id);S.acctOpen=no;toast('Account '+no+' opened for '+c.name+'.');return true},
+ pay(f){
+  const a=S.accounts.find(x=>x.no===f.from),amt=+f.amount,rail=f.rail;
+  if(a.status==='Frozen')return toast('Account '+a.no+' is frozen. Payments are blocked.',1);
+  if(!(amt>0))return toast('Enter an amount above zero.',1);
+  if(amt>a.bal+(a.od||0))return toast('Insufficient balance in '+a.no+(a.od?' (including the overdraft limit)':'')+'.',1);
+  let to=f.name;
+  if(rail==='Same bank'){if(!S.accounts.find(x=>x.no===f.acct))return toast('Account '+f.acct+' is not in this bank. Use IMPS or NEFT instead.',1);if(f.acct===f.from)return toast('Pick a different beneficiary account.',1);to=f.name+' ('+f.acct+')'}
+  if(rail==='IMPS'||rail==='NEFT'){const i=(f.ifsc||'').toUpperCase();if(!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(i))return toast('IFSC must be 4 letters, a zero, then 6 characters.',1);if(!/^\d{9,18}$/.test(f.acct))return toast('Account number must be 9 to 18 digits.',1);to=f.name+' ('+i+')'}
+  if(rail==='IMPS'&&amt>500000)return toast('IMPS limit is ₹5,00,000. Use NEFT.',1);
+  if(rail==='UPI'){if(!/^[\w.\-]{2,}@[a-z]{2,}$/i.test(f.vpa))return toast('Enter a valid UPI ID like name@bank.',1);if(amt>100000)return toast('UPI limit is ₹1,00,000. Use IMPS or NEFT.',1);to=f.name+' ('+f.vpa+')'}
+  a.bal-=amt;
+  const p={id:'P'+nextId(),from:a.no,rail,to,acct:f.acct,amount:amt,aml:amt>=1000000,byRole:S.role,by:actor()};
+  S.payments.push(p);post(a,'debit',amt,'Payment to '+to,p.id,rail);
+  if(p.aml)p.status='AML hold';else if(amt>=200000)p.status='Pending approval';else execPay(p);
+  log('payment.create',p.id,rail+' '+inr(amt)+' from '+a.no+' ('+p.status+')',a.cust);
+  toast('Payment '+p.id+': '+p.status+(p.ref&&p.status==='Completed'?' · '+p.ref:'')+'.');return true},
+ loan(f){
+  const c=cust(f.cust),P=PRODUCTS[f.product],amt=+f.amount,n=+f.tenure;
+  if(!(amt>0&&n>0))return toast('Enter amount and tenure.',1);
+  if(amt>P.max)return toast('Maximum for this product is '+inr(P.max)+'.',1);
+  if(n<P.minT||n>P.maxT)return toast('Tenure must be '+P.minT+' to '+P.maxT+' months.',1);
+  let gold=null;
+  if(f.product==='gold'){const e=(+f.grams)*(+f.karat)/24*(+f.grate)*0.75;if(!(e>0))return toast('Enter gold weight and rate.',1);if(amt>e)return toast('Amount exceeds the 75% LTV limit of '+inr(e)+'.',1);gold={grams:+f.grams,karat:+f.karat,rate:+f.grate,eligible:e}}
+  let pv=null;
+  if(f.product==='home'){pv=+f.pv;if(!(pv>0))return toast('Enter the property value.',1);if(amt>pv*0.8)return toast('Home loans are limited to 80% of property value: '+inr(pv*0.8)+'.',1)}
+  const m=f.product==='od'?amt*P.rate/1200:emi(amt,P.rate,n),foir=(c.emi+m)/c.income;
+  const decision=c.score<650?'Decline':foir>0.5?'Refer':'Approve';
+  const l={id:'L'+nextId(),cust:c.id,product:f.product,amount:amt,tenure:n,rate:P.rate,emi:m,foir,score:c.score,decision,status:decision==='Decline'?'Declined':'Credit review',gold,pv,schedule:null,byRole:S.role};
+  S.loans.push(l);log('loan.apply',l.id,P.label+' '+inr(amt)+', rules: '+decision,c.id);
+  toast('Loan '+l.id+': rule engine says '+decision+'. Status '+l.status+'.',decision==='Decline');return true},
+ cash(f){
+  const d=+f.denom,n=+f.count;if(!(n>0))return toast('Enter a note count.',1);
+  if(f.type==='issue'&&n>S.vault.cash[d])return toast('Vault holds only '+S.vault.cash[d]+' notes of ₹'+d+'.',1);
+  const m={id:'V'+nextId(),type:f.type==='issue'?'Cash issue':'Cash receive',desc:n+' × ₹'+d+' ('+inr(n*d)+')',d,n,kind:f.type,by:actor(),byRole:S.role,status:'Pending'};
+  S.vault.moves.push(m);log('vault.request',m.id,m.type+' '+m.desc);toast('Movement '+m.id+' created. A second custodian must sign.');return true},
+ gold(f){
+  if(!f.packet)return toast('No packet in vault.',1);
+  const m={id:'V'+nextId(),type:'Gold release',desc:'Packet '+f.packet,packet:f.packet,kind:'gold',by:actor(),byRole:S.role,status:'Pending'};
+  S.vault.moves.push(m);log('vault.request',m.id,'Gold release '+f.packet);toast('Release '+m.id+' created. A second custodian must sign.');return true},
+ fx(f){
+  const c=cust(f.cust),a=accOf(c.id),amt=+f.amount,rate=RATES[f.cur][1],inrAmt=amt*rate+1500;
+  if(!(amt>0))return toast('Enter an amount.',1);
+  const bic=(f.bic||'').toUpperCase();
+  if(!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic))return toast('BIC must be 8 or 11 characters, for example CHASUS33XXX.',1);
+  if(/red dawn|blocked trading/i.test(f.ben)){log('fx.sanctions_hit',c.id,'Beneficiary '+f.ben+' matched sanctions list',c.id);return toast('Sanctions list match. Blocked and sent to compliance.',1)}
+  const usd=inrAmt/RATES.USD[1],used=S.lrs[c.id]||0;
+  if(used+usd>250000)return toast('Yearly limit of USD 250,000 would be exceeded. Used so far: USD '+Math.round(used)+'.',1);
+  if(inrAmt>a.bal)return toast('Insufficient balance. Needs '+inr(inrAmt)+' including ₹1,500 charges.',1);
+  a.bal-=inrAmt;S.lrs[c.id]=used+usd;
+  const id='X'+nextId(),d=new Date().toISOString().slice(2,10).replace(/-/g,'');
+  const mt=`{1:F01SMPLINBBXXX0000000000}{2:I103${bic.padEnd(12,'X')}N}\n:20:${id}\n:23B:CRED\n:32A:${d}${f.cur}${amt.toFixed(2).replace('.',',')}\n:50K:/${a.no}\n${c.name.toUpperCase()}\n:57A:${bic}\n:59:/${f.iban}\n${f.ben.toUpperCase()}\n:70:${f.purpose.toUpperCase()}\n:71A:${f.charges}`;
+  S.swift.push({id,cust:c.id,cur:f.cur,amount:amt,inr:inrAmt,mt,status:'Pending release',byRole:S.role});
+  post(a,'debit',inrAmt,'Outward remittance '+amt+' '+f.cur+' to '+f.ben,id,'SWIFT');log('fx.create',id,amt+' '+f.cur+' to '+f.ben+' via '+bic,c.id);toast('Remittance '+id+' created. A checker must release it.');return true},
+ grv(f){
+  const sla={'Failed transaction':24,'Charges dispute':72,'Unauthorised transaction':24,'Service delay':48,'Gold loan':72}[f.cat];
+  const g={id:'G'+nextId(),cust:f.cust,cat:f.cat,text:f.text,opened:Date.now(),sla,level:1,owner:'Unassigned',status:'Open'};
+  S.grv.push(g);log('grievance.create',g.id,f.cat,f.cust);toast('Grievance '+g.id+' registered. SLA '+sla+' hours.');return true}
+};
+const ACTS={
+ acctFreeze(no){const a=S.accounts.find(x=>x.no===no);a.status='Frozen';log('account.freeze',no,'Account '+no+' frozen',a.cust);toast('Account '+no+' frozen. Payments from it are blocked.')},
+ acctUnfreeze(no){const a=S.accounts.find(x=>x.no===no);a.status='Active';log('account.unfreeze',no,'Account '+no+' unfrozen',a.cust);toast('Account '+no+' is active again.')},
+ kyc(id){cust(id).kyc='Refresh requested';log('kyc.refresh',id,'KYC refresh requested',id);toast('KYC refresh requested.')},
+ payOk(id){const p=S.payments.find(x=>x.id===id);if(p.byRole===S.role)return toast('The maker cannot approve their own payment.',1);execPay(p);log('payment.approve',id,'Approved, status '+p.status);toast('Approved. '+p.status+'.')},
+ payNo(id){const p=S.payments.find(x=>x.id===id);const a=S.accounts.find(x=>x.no===p.from);a.bal+=p.amount;post(a,'credit',p.amount,'Reversal: payment '+id+' rejected',id,p.rail);p.status='Rejected';log('payment.reject',id,'Rejected and funds released');toast('Rejected. Funds returned to the account.')},
+ amlClear(id){const p=S.payments.find(x=>x.id===id);p.status='Pending approval';log('aml.clear',id,'AML hold cleared, sent to checker');toast('Hold cleared. A checker must now approve it.')},
+ neftRun(){const q=S.payments.filter(p=>p.status==='Queued NEFT');if(!q.length)return toast('No NEFT payments are queued.',1);q.forEach((p,i)=>{p.status='Completed';p.ref='UTR SMPLN'+rnd(10)});log('neft.batch','batch',q.length+' payments settled');toast(q.length+' NEFT payment(s) settled.')},
+ loanSan(id){const l=S.loans.find(x=>x.id===id);l.status='Sanctioned';log('loan.sanction',id,'Sanctioned'+(l.decision==='Refer'?' with override':''),l.cust);toast('Loan '+id+' sanctioned.')},
+ loanCheck(id){const l=S.loans.find(x=>x.id===id);l.status='Valuation';log('loan.credit_check',id,'Credit check passed, valuation ordered',l.cust);toast('Credit check passed. Valuation ordered.')},
+ loanVal(id){const l=S.loans.find(x=>x.id===id);l.status='Legal';log('loan.valuation',id,'Valuation recorded, legal check started',l.cust);toast('Valuation recorded. Legal check is next.')},
+ loanLegal(id){const l=S.loans.find(x=>x.id===id);l.status='Sanctioned';log('loan.legal',id,'Legal cleared and sanctioned',l.cust);toast('Legal cleared. Home loan sanctioned.')},
+ loanNo(id){const l=S.loans.find(x=>x.id===id);l.status='Rejected';log('loan.reject',id,'Rejected',l.cust);toast('Loan '+id+' rejected.')},
+ loanDis(id){
+  const l=S.loans.find(x=>x.id===id),a=accOf(l.cust);
+  if(l.product==='od'){a.od=l.amount;l.status='Active';log('loan.disburse',id,'Overdraft limit '+inr(l.amount)+' set on '+a.no,l.cust);return toast('Overdraft limit of '+inr(l.amount)+' is live on '+a.no+'.')}
+  a.bal+=l.amount;post(a,'credit',l.amount,'Loan disbursal '+l.id,l.id,'Internal');l.status='Active';
+  const r=l.rate/1200;let bal=l.amount;l.schedule=[];
+  for(let i=1;i<=l.tenure;i++){const int=bal*r,pr=l.emi-int;bal=Math.max(0,bal-pr);const d=new Date();d.setMonth(d.getMonth()+i);l.schedule.push({i,due:d,pr,int,bal})}
+  if(l.gold){const no='GP-'+(1000+nextId());S.vault.gold.push({no,loan:l.id,cust:l.cust,grams:l.gold.grams,karat:l.gold.karat,slot:'A-'+String(S.vault.gold.length+1).padStart(2,'0'),status:'In vault'})}
+  log('loan.disburse',id,inr(l.amount)+' credited to '+a.no,l.cust);toast('Disbursed '+inr(l.amount)+' to '+a.no+'.')},
+ sched(id){S.openSched=S.openSched===id?null:id},
+ vSign(id){
+  const m=S.vault.moves.find(x=>x.id===id);if(m.byRole===S.role)return toast('A different custodian must sign.',1);
+  if(m.kind==='issue')S.vault.cash[m.d]-=m.n;else if(m.kind==='receive')S.vault.cash[m.d]+=m.n;else S.vault.gold.find(g=>g.no===m.packet).status='Released';
+  m.status='Signed';m.signer=me().name;log('vault.sign',id,m.type+' '+m.desc+', signed by '+me().name);toast('Signed. Vault updated and the movement is logged.')},
+ msg(id){S.openMsg=S.openMsg===id?null:id},
+ fxOk(id){const s=S.swift.find(x=>x.id===id);if(s.byRole===S.role)return toast('The maker cannot release their own remittance.',1);s.status='Sent';s.ack='ACK received (simulated)';log('fx.release',id,'Released via SWIFT (simulated)',s.cust);toast('Released. Acknowledgement received.')},
+ grvAssign(id){const g=S.grv.find(x=>x.id===id);g.owner=me().name;log('grievance.assign',id,'Assigned to '+me().name,g.cust);toast('Assigned to you.')},
+ grvEsc(id){const g=S.grv.find(x=>x.id===id);if(g.level>=3)return toast('Already at the top level (principal nodal officer).',1);g.level++;log('grievance.escalate',id,'Escalated to level '+g.level,g.cust);toast('Escalated to level '+g.level+'.')},
+ grvRes(id){
+  const g=S.grv.find(x=>x.id===id),late=Date.now()-(g.opened+g.sla*3600e3);let note='Resolved within SLA.';
+  if(late>0&&g.cat==='Failed transaction'){const days=Math.max(1,Math.ceil(late/86400e3)),amt=100*days,a=accOf(g.cust);a.bal+=amt;post(a,'credit',amt,'Compensation for delayed credit, '+id,id,'Internal');note='Resolved after SLA. Compensation '+inr(amt)+' credited to '+a.no+'.'}
+  else if(late>0)note='Resolved after SLA. Reviewed by the nodal officer.';
+  g.status='Resolved';g.note=note;log('grievance.resolve',id,note,g.cust);toast(note)},
+ tamper(){const e=S.audit[1]||S.audit[0];S.tampered={n:e.n,orig:e.detail};e.detail+=' (edited later)';toast('Entry '+e.n+' was changed without updating its hash.',1)},
+ untamper(){const e=S.audit[S.tampered.n-1];e.detail=S.tampered.orig;S.tampered=null;toast('Entry restored. Chain verifies again.')}
+};
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const oc=e.target.closest('[data-open-cust]');if(oc){e.preventDefault();S.view='cust';S.custOpen=oc.dataset.openCust;S.evFilter='all';render();window.scrollTo(0,0);return}
+  const oa=e.target.closest('[data-open-acct]');if(oa){e.preventDefault();S.view='acct';S.acctOpen=oa.dataset.openAcct;render();window.scrollTo(0,0);return}
+  const tq=e.target.closest('[data-txq]');if(tq){S.view='txn';S.txQ=tq.dataset.txq;S.txSel=null;render();window.scrollTo(0,0);return}
+  const ct=e.target.closest('[data-clear-tx]');if(ct){S.txSel=null;render();return}
+  const tx=e.target.closest('[data-tx]');if(tx){e.preventDefault();S.view='txn';S.txSel=tx.dataset.tx;render();return}
+  const bk=e.target.closest('[data-back]');if(bk){e.preventDefault();S.custOpen=null;S.acctOpen=null;render();return}
+  const ef=e.target.closest('[data-ev]');if(ef){S.evFilter=ef.dataset.ev;render();return}
+  const g=e.target.closest('[data-go]');if(g){S.view=g.dataset.go;S.custOpen=null;S.acctOpen=null;render();return}
+  const a=e.target.closest('[data-act]');if(a){ACTS[a.dataset.act](a.dataset.arg);render()}
+});
+document.addEventListener('submit',e=>{
+  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
+  const ok=FORMS[f.dataset.form](Object.fromEntries(new FormData(f)));
+  if(ok)render();
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='tx-q'||e.target.id==='cu-q'){if(e.target.id==='tx-q')S.txQ=e.target.value;else S.cuQ=e.target.value;render();const n=$('#'+e.target.id);n.focus();n.setSelectionRange(n.value.length,n.value.length);return}if(e.target.closest('[data-form="loan"]'))prevLoan()});
+document.addEventListener('change',e=>{
+  if(e.target.id==='tx-type'){S.txType=e.target.value;render();return}if(e.target.id==='tx-rail'){S.txRail=e.target.value;render();return}if(e.target.id==='tx-acct'){S.txAcct=e.target.value;render();return}if(e.target.id==='p-rail')railUI();if(e.target.id==='l-p'){const q=PRODUCTS[e.target.value];$('#l-t').value=q.dt;$('#l-a').value=q.da}if(e.target.closest('[data-form="loan"]'))prevLoan()});
+function applyTheme(t){
+  const r=document.documentElement;
+  if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');
+  document.querySelectorAll('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeSet===(t==='light'||t==='dark'?t:'system'))));
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-theme-set]');if(!b)return;applyTheme(b.dataset.themeSet);try{localStorage.setItem('bankcore-theme',b.dataset.themeSet)}catch(_){}});
+try{applyTheme(localStorage.getItem('bankcore-theme')||'system')}catch(_){applyTheme('system')}
+const sel=$('#role');
+sel.innerHTML=Object.entries(ROLES).map(([k,r])=>`<option value="${k}">${r.name} · ${r.title}</option>`).join('');
+sel.value=S.role;
+sel.addEventListener('change',()=>{S.role=sel.value;render();toast('Now acting as '+me().name+', '+me().title+'.')});
+
+/* seed: one active personal loan and one loan awaiting sanction */
+(function(){
+  const c1=cust('C1'),m=emi(300000,12.5,24);let bal=300000;const r=12.5/1200,sch=[];
+  for(let i=1;i<=24;i++){const int=bal*r,pr=m-int;bal=Math.max(0,bal-pr);const d=new Date();d.setMonth(d.getMonth()-3+i);sch.push({i,due:d,pr,int,bal})}
+  S.loans.push({id:'L1',cust:'C1',product:'personal',amount:300000,tenure:24,rate:12.5,emi:m,foir:m/c1.income,score:c1.score,decision:'Approve',status:'Active',gold:null,schedule:sch,byRole:'loan'});
+  const m2=emi(2500000,11,60);
+  S.loans.push({id:'L2',cust:'C3',product:'corporate',amount:2500000,tenure:60,rate:11,emi:m2,foir:(150000+m2)/900000,score:731,decision:'Approve',status:'Credit review',gold:null,schedule:null,byRole:'loan'});
+  const m3=emi(4500000,8.75,240);
+  S.loans.push({id:'L3',cust:'C1',product:'home',amount:4500000,tenure:240,rate:8.75,emi:m3,foir:m3/85000,score:782,decision:'Approve',status:'Valuation',gold:null,pv:6000000,schedule:null,byRole:'loan'});
+  S.loans.push({id:'L4',cust:'C3',product:'od',amount:1500000,tenure:12,rate:11.5,emi:1500000*11.5/1200,foir:0,score:731,decision:'Approve',status:'Active',gold:null,pv:null,schedule:null,byRole:'loan'});
+  accOf('C3').od=1500000;
+  S.seq=110;
+  const DAY=864e5,now=Date.now();
+  const age={C1:900,C2:610,C3:1300,C4:260};
+  const extra={C1:{email:'anita.sen@example.com',nominee:'Rohit Sen (spouse)',consents:{'Transaction alerts (SMS)':1,'Marketing messages':0,'Account Aggregator sharing':1}},C2:{email:'rahul.m@example.com',nominee:'Sima Mukherjee (mother)',consents:{'Transaction alerts (SMS)':1,'Marketing messages':1,'Account Aggregator sharing':0}},C3:{email:'accounts@sunrisetextiles.example',nominee:'Not applicable',consents:{'Transaction alerts (SMS)':1,'Marketing messages':0,'Account Aggregator sharing':0}},C4:{email:'meera.das@example.com',nominee:'Anil Das (father)',consents:{'Transaction alerts (SMS)':1,'Marketing messages':1,'Account Aggregator sharing':0}}};
+  S.customers.forEach(c=>{Object.assign(c,extra[c.id],{created:now-age[c.id]*DAY,branch:'Park Street, Kolkata',rm:'Priya Nandi'})});
+  S.accounts.forEach((a,i)=>{a.status='Active';a.opened=now-(age[a.cust]-20)*DAY});
+  const m1=Math.round(emi(300000,12.5,24));
+  const SEEDS={
+   '10010001':[['credit',85000,'Salary credit, Acme Infra','NEFT',-34],['debit',12000,'Rent to landlord','NEFT',-31],['debit',2350,'UPI to Big Basket','UPI',-26],['debit',m1,'EMI auto-debit, loan L1','Internal',-20],['credit',85000,'Salary credit, Acme Infra','NEFT',-4],['debit',1240,'UPI to Swiggy','UPI',-2]],
+   '10010003':[['credit',52000,'Salary credit, Bengal Steel','NEFT',-30],['debit',9000,'EMI auto-debit, car loan','Internal',-24],['debit',4200,'UPI to electricity board','UPI',-15],['debit',1500,'ATM withdrawal','Cash',-8],['credit',3000,'IMPS from Debasis Paul','IMPS',-3]],
+   '10010004':[['credit',950000,'Customer receipts, batch','NEFT',-28],['debit',320000,'Supplier payment, cotton yarn','NEFT',-21],['debit',150000,'EMI auto-debit, term loan','Internal',-18],['credit',420000,'Customer receipts, batch','NEFT',-9],['debit',85000,'GST payment','NEFT',-5]],
+   '10010005':[['credit',38000,'Salary credit, Das and Co','NEFT',-29],['debit',6500,'UPI to Reliance Fresh','UPI',-18],['debit',590,'SMS charges','Internal',-14],['debit',590,'SMS charges','Internal',-13]]};
+  Object.entries(SEEDS).forEach(([no,list])=>{const a=S.accounts.find(x=>x.no===no);let net=0;list.forEach(r=>net+=r[0]==='credit'?r[1]:-r[1]);let b=a.bal-net;
+    list.forEach((r,i)=>{b+=r[0]==='credit'?r[1]:-r[1];S.txns.push({id:'T'+(S.txns.length+1000),ts:now+r[4]*DAY-i*3600e3,acct:no,cust:a.cust,dir:r[0],amount:r[1],desc:r[2],ref:'',rail:r[3],bal:b})})});
+  const H=(c,d,code,text,actor)=>S.hist.push({cust:c,ts:now-d*DAY,code,text,actor:actor||'System'});
+  H('C1',900,'customer.created','Customer record created at Park Street branch','Priya Nandi');H('C1',898,'kyc.verified','KYC verified through CKYC and video KYC','Debjani Roy');H('C1',880,'account.opened','Savings account 10010001 opened','Priya Nandi');H('C1',92,'loan.disburse','Loan L1 disbursed, ₹3,00,000 over 24 months','Debjani Roy');
+  H('C2',610,'customer.created','Customer record created at Park Street branch','Priya Nandi');H('C2',608,'kyc.verified','KYC verified through Aadhaar eKYC','Debjani Roy');H('C2',590,'account.opened','Savings account 10010003 opened','Priya Nandi');
+  H('C3',1300,'customer.created','Corporate customer record created','Arup Banerjee');H('C3',1290,'kyc.verified','KYC verified, beneficial owners recorded','Kavita Rao');H('C3',1280,'account.opened','Current account 10010004 opened','Priya Nandi');H('C3',40,'loan.disburse','Overdraft limit of ₹15,00,000 set on 10010004','Arup Banerjee');
+  H('C4',260,'customer.created','Customer record created at Park Street branch','Priya Nandi');H('C4',258,'kyc.verified','KYC verified through Aadhaar eKYC','Debjani Roy');H('C4',240,'account.opened','Savings account 10010005 opened','Priya Nandi');H('C4',10,'kyc.refresh_due','Periodic KYC refresh is due','System');
+  S.grv.forEach(g=>H(g.cust,(now-g.opened)/DAY,'grievance.create',g.cat+': '+g.text,'Priya Nandi'));
+})();
+render();
+</script>
+
+</body></html>
